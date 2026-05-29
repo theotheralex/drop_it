@@ -239,6 +239,22 @@
   .splash .sub { color:var(--mute); font-size:12.5px; margin-top:-12px; }
   .splash .enter { margin-top:8px; padding:15px 40px; border-radius:999px; background:var(--coral); color:#fff; border:none; font-weight:700; font-size:16px; font-family:inherit; box-shadow:0 12px 30px rgba(255,91,72,.45); }
   .splash .note { position:absolute; bottom:34px; color:var(--mute); font-size:11.5px; }
+  .chip svg { width:13px; height:13px; margin-right:5px; vertical-align:-2px; }
+  .mk.pin .flame { position:absolute; top:-7px; right:-9px; width:18px; height:18px; border-radius:50%; background:linear-gradient(135deg,#ff8a3d,#ff3b30); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 7px rgba(0,0,0,.5); border:1.5px solid rgba(255,255,255,.55); z-index:4; }
+  .mk.pin .flame svg { width:10px; height:10px; }
+  .dvtrend { padding:2px 0 4px; }
+  .dvtrend-h { display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--dim); text-transform:uppercase; letter-spacing:.06em; padding:0 2px 9px; }
+  .dvtrend-h svg { width:14px; height:14px; }
+  .dvtrend-rail { display:flex; gap:11px; overflow-x:auto; scrollbar-width:none; padding-bottom:4px; }
+  .dvtrend-rail::-webkit-scrollbar { display:none; }
+  .tcard { flex-shrink:0; width:142px; }
+  .tcard .timg { height:86px; border-radius:14px; position:relative; overflow:hidden; border:1px solid var(--line); }
+  .tcard .trank { position:absolute; top:7px; left:7px; min-width:21px; height:21px; padding:0 5px; border-radius:999px; background:rgba(8,11,18,.72); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; }
+  .tcard .tflame { position:absolute; top:7px; right:7px; width:20px; height:20px; border-radius:50%; background:linear-gradient(135deg,#ff8a3d,#ff3b30); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,.4); }
+  .tcard .tflame svg { width:11px; height:11px; }
+  .tcard .tnm { font-size:12.5px; font-weight:650; margin-top:7px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tcard .trow { font-size:11px; color:var(--mute); margin-top:2px; display:flex; align-items:center; gap:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tcard .trow .star { color:var(--amber); }
 </style>
 </head>
 <body>
@@ -254,14 +270,14 @@
           <div class="avatar" id="avatar">A</div>
           <div class="chips2" id="chips">
             <div class="chip on" data-f="all">All</div>
-            <div class="chip" data-f="food">🌮 Food</div>
-            <div class="chip" data-f="drinks">🍸 Drinks</div>
-            <div class="chip" data-f="outdoors">🌳 Outdoors</div>
+            <div class="chip" data-f="food"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="3" x2="7" y2="21"/><path d="M5 3v4a2 2 0 0 0 4 0V3"/><path d="M16 3c-1.6 0-2.6 2-2.6 4.5S14.4 11 16 11v10"/></svg>Food</div>
+            <div class="chip" data-f="drinks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14l-7 8-7-8z"/><line x1="12" y1="12" x2="12" y2="20"/><line x1="8" y1="20" x2="16" y2="20"/></svg>Drinks</div>
+            <div class="chip" data-f="outdoors"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 13h5l-3 5h12l-3-5h5L12 2z"/><line x1="12" y1="18" x2="12" y2="22"/></svg>Outdoors</div>
             <div class="chip" data-f="live">● Live</div>
           </div>
         </div>
         <div class="searchwrap" id="searchwrap">
-          <div class="searchpill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a968a" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21" stroke-linecap="round"/></svg><input id="searchInput" type="text" placeholder="Search places, food, friends" autocomplete="off" autocorrect="off" /><span class="sclear" id="searchclear" style="display:none">✕</span></div>
+          <div class="searchpill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a968a" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21" stroke-linecap="round"/></svg><input id="searchInput" type="text" placeholder="Search places, food, friends" autocomplete="off" autocorrect="off" /><span class="sclear" id="searchclear" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></span></div>
           <div class="searchresults" id="searchresults"></div>
         </div>
         <div class="zoomc"><button id="zin">+</button><button id="zout">−</button></div>
@@ -279,6 +295,7 @@
       <div class="dvdrawer">
         <div class="grab2"></div>
         <div class="dvhead"><div class="dveye">Wednesday · 7:42 PM</div><div class="dvtitle">Live <em>now</em> nearby.</div></div>
+        <div class="dvtrend"><div class="dvtrend-h"><svg viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> Trending now</div><div class="dvtrend-rail" id="dvtrend"></div></div>
         <div class="dvseg" id="dvseg"><button class="on" data-seg="now">Now</button><button data-seg="tonight">Tonight</button><button data-seg="weekend">Weekend</button></div>
         <div class="dvfeed" id="dvfeed"></div>
       </div>
@@ -479,14 +496,20 @@
     const fh=[]; [...revNames].sort((a,c)=>sd(name,a[2])-sd(name,c[2])).slice(0,Math.floor(sd(name,'fh')*4)).forEach(x=>fh.push(x));
     const revs=[]; const nrev=Math.floor(sd(name,'nr')*2.6);
     for(let v=0; v<nrev; v++){ const rn=pick(revNames,name,'rv'+v); revs.push([rn[0],rn[1],rn[2],pick(['1d','3d','5d','1w','2w'],name,'ra'+v),pick(revLines,name,'rl'+v)]); }
+    const busyPct=Math.min(1,(live?0.42:0.12)+sd(name,'busy')*0.46+Math.min(0.22,posts/700));
+    const buslevel= busyPct>0.66?'Busy right now': busyPct>0.4?'Picking up':'Quiet right now';
+    const tscore= st*1.1 + Math.log10(rc+1)*0.7 + (live?1.5:0) + busyPct*1.4 + Math.min(1.2,posts/150);
     places[id]={ id,name,type,cat,icon:ICON[type],live, busy: live? Math.min(1, posts/150) : 0, stars:st.toFixed(1), rev:rc.toLocaleString(),
       catLabel:`${type} · ${loc}`, dist:dmi.toFixed(1)+' mi', open:(live?'● Open now · ':'● ')+hint,
       walk:Math.max(1,Math.round(dmi*20))+' min', drive:Math.max(1,Math.round(dmi*5))+' min', transit:Math.max(2,Math.round(dmi*14))+' min',
       blurb:pick(BLURB[GRP[type]],name,'bl'), fill:f.css, dot, g, x:wx(lng), y:wy(lat), lat, lng,
       posts, parking:(type==='Park'?PARK_PARK:pick(PARKPOOL,name,'pk')),
-      rb:[five,four,three,two,one], videos, fhere:fh, userPhotos:[], reviews:revs };
+      rb:[five,four,three,two,one], videos, fhere:fh, userPhotos:[], reviews:revs, busyPct, buslevel, tscore, rcount:rc };
     });
+    computeTrending();
   }
+  function computeTrending(){ TRENDING=Object.values(places).sort((a,b)=>b.tscore-a.tscore); HOT=new Set(TRENDING.slice(0,8).map(p=>p.id)); }
+  let HOT=new Set(), TRENDING=[];
   buildPlaces(RAW);
   function gx(g){ return `linear-gradient(135deg,${g[0]},${g[1]})`; }
 
@@ -499,6 +522,7 @@
   const HEREX=wx(HERE.lng), HEREY=wy(HERE.lat);
 
   let ICONHTML={TACO};
+  const FLAME_SVG='<svg viewBox="0 0 24 24" fill="#fff"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>';
   function cacheIcons(){ const need=[...new Set(Object.values(places).map(p=>p.icon))].filter(n=>n!=='TACO');
     const tmp=document.createElement('div'); tmp.style.display='none'; tmp.innerHTML=need.map(n=>`<span data-n="${n}"><i data-lucide="${n}"></i></span>`).join(''); document.body.appendChild(tmp);
     if(window.lucide) lucide.createIcons();
@@ -516,7 +540,8 @@
     if(p.live){ const d=(2.6-p.busy*1.3).toFixed(2); ring=`<div class="ring" style="animation:pingC ${d}s ease-out infinite"></div>`+(p.busy>0.62?`<div class="ring2" style="animation:pingC ${d}s ease-out infinite ${(d*0.5).toFixed(2)}s"></div>`:''); }
     const ic=p.icon==='TACO'?TACO:(ICONHTML[p.icon]||'');
     const lbl=withLabel?`<div class="lbl">${p.live?`<span class="live" style="background:${p.dot}"></span>`:''}${p.name}</div>`:'';
-    return `<div class="mk pin" data-id="${p.id}" data-lng="${p.lng}" data-lat="${p.lat}" style="left:${sx}px;top:${sy}px;color:${p.dot}"><div class="body" style="background:${p.fill}">${ic}</div>${ring}${lbl}</div>`;
+    const flame=(withLabel&&HOT.has(p.id))?`<div class="flame">${FLAME_SVG}</div>`:'';
+    return `<div class="mk pin" data-id="${p.id}" data-lng="${p.lng}" data-lat="${p.lat}" style="left:${sx}px;top:${sy}px;color:${p.dot}"><div class="body" style="background:${p.fill}">${ic}</div>${flame}${ring}${lbl}</div>`;
   }
   function dotMK(p,sx,sy){ const ring=p.live?`<div class="ring" style="animation:pingC ${(2.6-p.busy*1.3).toFixed(2)}s ease-out infinite"></div>`:''; return `<div class="mk dot" data-id="${p.id}" data-lng="${p.lng}" data-lat="${p.lat}" style="left:${sx}px;top:${sy}px;color:${p.dot}"><div class="d" style="background:${p.fill}"></div>${ring}</div>`; }
   function cluMK(cx,cy,grp){ const dots=grp.slice(0,3).map(g=>`<span class="ds" style="background:${g.p.fill}"></span>`).join(''); const clng=grp.reduce((a,g)=>a+g.p.lng,0)/grp.length, clat=grp.reduce((a,g)=>a+g.p.lat,0)/grp.length; return `<div class="mk clu" data-lng="${clng}" data-lat="${clat}" style="left:${cx}px;top:${cy}px"><div class="c"><span class="dotset">${dots}</span>${grp.length}</div></div>`; }
@@ -565,7 +590,11 @@
   let dvmap=null;
   function renderDv(){ if(!dvmap) return; const live=Object.values(places).filter(p=>p.live); $('dvdots').innerHTML=live.map(p=>{ const s=dvmap.project([p.lng,p.lat]); return `<div class="dvdot" style="left:${s.x}px;top:${s.y}px;color:${p.dot}"><div class="r"></div><div class="b" style="background:${p.fill}"></div></div>`; }).join(''); }
   function initDvMap(){ if(dvmap){ dvmap.resize(); renderDv(); return; } dvmap=new maplibregl.Map({ container:'dvmlmap', style:'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json', center:[HERE.lng,HERE.lat], zoom:13.9, interactive:false, attributionControl:false }); dvmap.on('load',()=>{ dvmap.resize(); renderDv(); }); }
+  function renderTrending(){ const rail=$('dvtrend'); if(!rail) return; const top=TRENDING.slice(0,10);
+    rail.innerHTML=top.map((p,i)=>`<div class="tcard" data-id="${p.id}"><div class="timg" style="background:${gx(p.g[0])}"><div class="trank">${i+1}</div>${i<3?`<div class="tflame">${FLAME_SVG}</div>`:''}</div><div class="tnm">${p.name}</div><div class="trow"><span class="star">★</span>${p.stars}<span>·</span>${p.live?p.buslevel:(p.catLabel.split(' · ')[1]||p.type)}</div></div>`).join('');
+  }
   function discoverFeed(seg){
+    renderTrending();
     let list=Object.entries(places);
     if(seg==='now') list=list.filter(([id,p])=>p.live);
     else if(seg==='tonight') list=list.filter(([id,p])=>['drinks','music'].includes(p.cat));
@@ -578,6 +607,7 @@
   }
   document.querySelectorAll('#dvseg button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#dvseg button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); curSeg=b.dataset.seg; discoverFeed(b.dataset.seg); });
   $('dvfeed').addEventListener('click',e=>{ const c=e.target.closest('.ev'); if(c) openPlace(c.dataset.id); });
+  $('dvtrend').addEventListener('click',e=>{ const c=e.target.closest('.tcard'); if(c) openPlace(c.dataset.id); });
   discoverFeed('now');
 
   const OSRM_BASE='https://routing.openstreetmap.de';
@@ -589,13 +619,13 @@
     $('s-name').innerHTML=p.name+(p.live?' <span class="livebadge"><span class="d"></span>LIVE</span>':'');
     $('s-cat').textContent=p.catLabel; $('s-stars').textContent='★ '+p.stars; $('s-rev').textContent=p.rev+' ratings';
     $('s-walk').textContent=p.walk; $('s-drive').textContent=p.drive; $('s-transit').textContent=p.transit; $('s-blurb').textContent=p.blurb;
-    let strip=p.userPhotos.map(u=>`<div class="sp" style="background-image:url('${u}')"><span class="pill">📸 your post</span></div>`).join('');
-    strip+=p.g.map((g,i)=>`<div class="sp" style="background:${gx(g)}">${i===0&&!p.userPhotos.length?'<span class="pill">'+(p.live?'📍 '+(4+Math.floor(sd(p.name,'hn')*22))+' here now':'photo')+'</span>':''}</div>`).join('');
+    let strip=p.userPhotos.map(u=>`<div class="sp" style="background-image:url('${u}')"><span class="pill">Your post</span></div>`).join('');
+    strip+=p.g.map((g,i)=>`<div class="sp" style="background:${gx(g)}">${i===0&&!p.userPhotos.length?'<span class="pill">'+(p.live?p.buslevel:'photo')+'</span>':''}</div>`).join('');
     $('sphotos').innerHTML=strip;
     $('s-parking').innerHTML=`<div class="pk"><div class="pic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 17V8h3.5a2.5 2.5 0 010 5H9" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="psum">${p.parking.s}<span class="pbadge">${p.parking.b}</span></div><div class="pdet">${p.parking.d}</div></div></div>`;
     if(p.fhere.length){ $('s-fhere-sec').style.display=''; $('s-fhere').innerHTML=`<div class="fhere"><div class="stack">${p.fhere.map(r=>`<div class="mm" style="background:${r[1]}">${r[0]}</div>`).join('')}</div><div class="tt"><b>${p.fhere.map(r=>r[2]).join(', ')}</b> <span>${p.fhere.length>1?'are':'is'} here right now</span></div></div>`; } else $('s-fhere-sec').style.display='none';
     $('s-vidcount').textContent='See all '+p.videos.length;
-    $('s-vids').innerHTML=p.videos.map(v=>`<div class="vid" style="background:${gx(v.g)}"><div class="who">@${v.who.toLowerCase()}</div><div class="play">▶</div><div class="vw">${v.vw} views</div></div>`).join('');
+    $('s-vids').innerHTML=p.videos.map(v=>`<div class="vid" style="background:${gx(v.g)}"><div class="who">@${v.who.toLowerCase()}</div><div class="play"><svg viewBox="0 0 24 24" fill="#fff" width="12" height="12"><path d="M8 5v14l11-7z"/></svg></div><div class="vw">${v.vw} views</div></div>`).join('');
     const cells=[...p.userPhotos.map(u=>({u})),...p.g.map(g=>({g})),...p.g.map(g=>({g}))].slice(0,6);
     $('s-photos').innerHTML=cells.map((c,i)=>`<div class="pcell" style="${c.u?`background-image:url('${c.u}')`:`background:${gx(c.g)}`}">${i===5?'<div class="more">+24</div>':''}</div>`).join('');
     $('s-rnum').textContent=p.stars; $('s-rcnt').textContent=p.rev+' ratings'; $('s-rbars').innerHTML=ratingBars(p);
@@ -661,7 +691,7 @@
     $('post-places').innerHTML=near.map(([id,p],i)=>`<div class="fp ${i===0?'on':''}" data-pp="${id}"><span class="av" style="background:${p.fill}">${p.live?'●':'•'}</span>${p.name}</div>`).join('');
     document.querySelectorAll('#post-places .fp').forEach(c=>c.onclick=()=>{ document.querySelectorAll('#post-places .fp').forEach(x=>x.classList.remove('on')); c.classList.add('on'); postPlaceId=c.dataset.pp; });
     $('scrim').classList.add('on'); $('postm').classList.add('on'); }
-  $('post-send').onclick=()=>{ const p=places[postPlaceId]; const img=$('post-img').src; if(p&&img){ p.userPhotos.unshift(img); userDrops.push({ lat:HERE.lat+(Math.random()-0.5)*0.0006, lng:HERE.lng+(Math.random()-0.5)*0.0006, photo:img, pid:postPlaceId }); } closeAll(); $('post-cap').value=''; if(mlmap) mlmap.easeTo({center:[HERE.lng,HERE.lat], zoom:Math.max(mlmap.getZoom(),15.2)}); render(); toast('Posted to '+(p?p.name:'your spot')+' ✨ · pin dropped'); };
+  $('post-send').onclick=()=>{ const p=places[postPlaceId]; const img=$('post-img').src; if(p&&img){ p.userPhotos.unshift(img); userDrops.push({ lat:HERE.lat+(Math.random()-0.5)*0.0006, lng:HERE.lng+(Math.random()-0.5)*0.0006, photo:img, pid:postPlaceId }); } closeAll(); $('post-cap').value=''; if(mlmap) mlmap.easeTo({center:[HERE.lng,HERE.lat], zoom:Math.max(mlmap.getZoom(),15.2)}); render(); toast('Posted to '+(p?p.name:'your spot')+' · pin dropped'); };
 
   document.querySelectorAll('.chip').forEach(ch=>ch.onclick=()=>{ document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); ch.classList.add('on'); FILTER=ch.dataset.f; render(); });
   document.querySelectorAll('.nav button[data-v]').forEach(b=>b.onclick=()=>{ document.querySelectorAll('.view').forEach(v=>v.classList.remove('on')); $('v-'+b.dataset.v).classList.add('on'); document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); closeMenus(); if(b.dataset.v==='discover') setTimeout(initDvMap,80); if(b.dataset.v==='map' && mlmap) setTimeout(()=>{ mlmap.resize(); render(); },80); });

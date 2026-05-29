@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Drop It — Mission</title>
+<title>Drop It — Mission (real map)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css" rel="stylesheet">
 <style>
   :root {
     --bg:#0a0d14; --bg-2:#11141d; --surface:#161a25; --surface-2:#1c2230;
@@ -33,8 +34,10 @@
   #v-map { top:-42px; } /* let the map bleed up behind the status bar */
   #v-map .map { padding-top:42px; }
 
-  .map { position:absolute; inset:0; overflow:hidden; background:#0c1018; touch-action:none; cursor:grab; }
-  .map.grab { cursor:grabbing; }
+  .map { position:absolute; inset:0; overflow:hidden; background:#0c1018; }
+  #mlmap { position:absolute; inset:0; z-index:1; }
+  #mlmap .maplibregl-ctrl-attrib { font-size:9px; opacity:.5; }
+  .mk.fglow { transform:translate(-50%,-50%); border-radius:50%; filter:blur(7px); opacity:.4; pointer-events:none; }
   .world { position:absolute; left:0; top:0; width:1200px; height:1600px; transform-origin:0 0; will-change:transform; }
   #citybg { position:absolute; inset:0; background:linear-gradient(0deg,rgba(255,255,255,.02) 1px,transparent 1px) 0 0/100% 60px,linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px) 0 0/60px 100%; }
   .bldg { position:absolute; border-radius:4px; }
@@ -232,12 +235,7 @@
   <div class="views">
     <div class="view on" id="v-map">
       <div class="map" id="map">
-        <div class="world" id="world">
-          <div id="citybg"></div>
-          <div class="parkglow" id="parkglow"></div>
-          <div id="zoneblobs"></div>
-        </div>
-        <div class="streetlabels" id="streetlabels"></div>
+        <div id="mlmap"></div>
         <div class="markers" id="markers"></div>
         <div class="mscrim"></div>
         <div class="mtop">
@@ -253,7 +251,7 @@
         <div class="searchpill" id="searchpill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a968a" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21" stroke-linecap="round"/></svg>Search places, food, friends</div>
         <div class="zoomc"><button id="zin">+</button><button id="zout">−</button></div>
         <button class="fab" id="fab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="6" x2="12" y2="18"/><line x1="6" y1="12" x2="18" y2="12"/></svg></button>
-        <div class="hint" id="hint">The Mission · drag, pinch to zoom, tap a pin</div>
+        <div class="hint" id="hint">Real Mission map · drag, pinch to zoom, tap a pin</div>
       </div>
     </div>
 
@@ -363,6 +361,7 @@
 
 </div></div>
 
+<script src="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <script>
   const $ = id => document.getElementById(id);
@@ -484,26 +483,10 @@
 
   const STV=[ {x:wx(-122.4268),n:'Dolores St'},{x:wx(-122.4243),n:'Guerrero St'},{x:wx(-122.4214),n:'Valencia St',m:1},{x:wx(-122.4185),n:'Mission St',m:1},{x:wx(-122.4160),n:'S Van Ness'},{x:wx(-122.4120),n:'Folsom St'} ];
   const STH=[ {y:wy(37.7649),n:'16th St'},{y:wy(37.7617),n:'18th St'},{y:wy(37.7592),n:'20th St'},{y:wy(37.7555),n:'22nd St'},{y:wy(37.7522),n:'24th St'},{y:wy(37.7485),n:'Cesar Chavez'} ];
-  function buildCity(){
-    let html='';
-    for(let gxp=30; gxp<1170; gxp+=104){ for(let gyp=30; gyp<1560; gyp+=116){
-      if(Math.hypot(gxp-wx(-122.4268),gyp-wy(37.7600))<150) continue;
-      const k=gxp+'-'+gyp, ix=4+sd(k,'ix')*9, iy=4+sd(k,'iy')*11, w=104-16-ix, h=116-20-iy, op=(0.022+sd(k,'op')*0.04).toFixed(3);
-      html+=`<div class="bldg" style="left:${gxp+ix/2}px;top:${gyp+iy/2}px;width:${w}px;height:${h}px;background:rgba(255,255,255,${op})"></div>`;
-    }}
-    STV.forEach(v=>{ const w=v.m?14:9; html+=`<div class="st" style="left:${v.x-w/2}px;top:0;width:${w}px;height:1600px;background:rgba(255,255,255,${v.m?0.07:0.045})"></div>`; });
-    STH.forEach(o=>{ html+=`<div class="st" style="left:0;top:${o.y-5}px;width:1200px;height:10px;background:rgba(255,255,255,0.05)"></div>`; });
-    $('citybg').innerHTML=html;
-    $('parkglow').style.left=wx(-122.4268)+'px'; $('parkglow').style.top=wy(37.7600)+'px';
-    $('zoneblobs').innerHTML=Object.values(FR).map(f=>`<div class="zoneblob" style="left:${f.x}px;top:${f.y}px;background:radial-gradient(circle,${f.c},transparent 70%)"></div>`).join('');
-  }
-
   let FILTER='all';
-  const map=$('map'), world=$('world'), markers=$('markers'); const W=1200,H=1600,MINS=0.55,MAXS=2.9;
-  const CLUSTER_MAX=1.7, CR=48, DOTS_BELOW=0.95, LABELS_AT=1.45;
-  let s=1, tx=0, ty=0;
-  const clampS=v=>Math.max(MINS,Math.min(MAXS,v));
-  function clampPan(){ const vw=map.clientWidth,vh=map.clientHeight,ww=W*s,wh=H*s; tx=ww<=vw?(vw-ww)/2:Math.min(0,Math.max(vw-ww,tx)); ty=wh<=vh?(vh-wh)/2:Math.min(0,Math.max(vh-wh,ty)); }
+  const map=$('map'), markers=$('markers');
+  const CR=48, DOTS_Z=13.2, LABELS_Z=14.2, CLUSTER_Z=14.9, START_Z=14.4;
+  let mlmap=null, mlReady=false;
   function visible(){ return Object.values(places).filter(p=> FILTER==='all' || (FILTER==='live'? p.live : p.cat===FILTER)); }
   function pinMK(p,sx,sy,withLabel){
     let ring='';
@@ -514,43 +497,34 @@
   }
   function dotMK(p,sx,sy){ const ring=p.live?`<div class="ring" style="animation:pingC ${(2.6-p.busy*1.3).toFixed(2)}s ease-out infinite"></div>`:''; return `<div class="mk dot" data-id="${p.id}" style="left:${sx}px;top:${sy}px;color:${p.dot}"><div class="d" style="background:${p.fill}"></div>${ring}</div>`; }
   function cluMK(cx,cy,grp){ const dots=grp.slice(0,3).map(g=>`<span class="ds" style="background:${g.p.fill}"></span>`).join(''); return `<div class="mk clu" style="left:${cx}px;top:${cy}px"><div class="c"><span class="dotset">${dots}</span>${grp.length}</div></div>`; }
-  function renderStreets(){ const vw=map.clientWidth, vh=map.clientHeight; let h='';
-    STV.forEach(v=>{ const sx=v.x*s+tx; if(sx>14 && sx<vw-14) h+=`<div class="slbl v" style="left:${sx}px;top:182px">${v.n}</div>`; });
-    STH.forEach(o=>{ const sy=o.y*s+ty; if(sy>156 && sy<vh-86) h+=`<div class="slbl h" style="left:20px;top:${sy}px">${o.n}</div>`; });
-    $('streetlabels').innerHTML=h; }
+  function fglowPx(lat){ const a=mlmap.project([0,lat]), b=mlmap.project([0,lat+0.0022]); return Math.max(34, Math.abs(a.y-b.y)); }
   function render(){
-    clampPan();
-    world.style.transform=`translate(${tx}px,${ty}px) scale(${s})`;
-    renderStreets();
-    let html=`<div class="mk here" style="left:${HEREX*s+tx}px;top:${HEREY*s+ty}px"><div class="ping"></div><div class="dot"></div></div>`;
-    for(const k in FR){ const f=FR[k]; html+=`<div class="mk fbadge" data-friend="${k}" style="left:${f.x*s+tx}px;top:${f.y*s+ty}px;background:${f.g}">${f.init}</div>`; }
-    const items=visible().map(p=>({p,sx:p.x*s+tx,sy:p.y*s+ty}));
-    if(s<CLUSTER_MAX){
+    if(!mlmap||!mlReady) return;
+    const z=mlmap.getZoom();
+    const hp=mlmap.project([HERE.lng,HERE.lat]);
+    let html=`<div class="mk here" style="left:${hp.x}px;top:${hp.y}px"><div class="ping"></div><div class="dot"></div></div>`;
+    for(const k in FR){ const f=FR[k], c=mlmap.project([f.lng,f.lat]), r=fglowPx(f.lat); html+=`<div class="mk fglow" style="left:${c.x}px;top:${c.y}px;width:${r*2}px;height:${r*2}px;background:radial-gradient(circle,${f.c},transparent 70%)"></div><div class="mk fbadge" data-friend="${k}" style="left:${c.x}px;top:${c.y}px;background:${f.g}">${f.init}</div>`; }
+    const items=visible().map(p=>{ const s=mlmap.project([p.lng,p.lat]); return {p,sx:s.x,sy:s.y}; });
+    if(z<CLUSTER_Z){
       const used=new Array(items.length).fill(false);
       for(let i=0;i<items.length;i++){ if(used[i])continue; const grp=[items[i]]; used[i]=true;
         for(let j=i+1;j<items.length;j++){ if(!used[j] && Math.hypot(items[i].sx-items[j].sx,items[i].sy-items[j].sy)<CR){ grp.push(items[j]); used[j]=true; } }
-        if(grp.length===1){ const it=grp[0]; html+= (s<DOTS_BELOW)?dotMK(it.p,it.sx,it.sy):pinMK(it.p,it.sx,it.sy,s>=LABELS_AT); }
+        if(grp.length===1){ const it=grp[0]; html+= (z<DOTS_Z)?dotMK(it.p,it.sx,it.sy):pinMK(it.p,it.sx,it.sy,z>=LABELS_Z); }
         else { const cx=grp.reduce((a,g)=>a+g.sx,0)/grp.length, cy=grp.reduce((a,g)=>a+g.sy,0)/grp.length; html+=cluMK(cx,cy,grp); }
       }
     } else { items.forEach(it=> html+=pinMK(it.p,it.sx,it.sy,true)); }
     markers.innerHTML=html;
   }
-  function zoomAt(px,py,fct){ const ns=clampS(s*fct),r=ns/s; tx=px-(px-tx)*r; ty=py-(py-ty)*r; s=ns; render(); }
-  function center(cx,cy,ns){ s=clampS(ns); tx=map.clientWidth/2-cx*s; ty=map.clientHeight/2-cy*s; render(); }
-
-  const pts=new Map(); let panLast=null,lastDist=0,lastMid=null,moved=0;
-  const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y), mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
-  map.addEventListener('pointerdown',e=>{ map.classList.add('grab'); pts.set(e.pointerId,{x:e.clientX,y:e.clientY}); moved=0; if(pts.size===1) panLast={x:e.clientX,y:e.clientY}; else if(pts.size===2){const a=[...pts.values()];lastDist=dist(a[0],a[1]);lastMid=mid(a[0],a[1]);panLast=null;} });
-  map.addEventListener('pointermove',e=>{ if(!pts.has(e.pointerId))return; pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(pts.size===1&&panLast){ const dx=e.clientX-panLast.x,dy=e.clientY-panLast.y; moved+=Math.abs(dx)+Math.abs(dy); tx+=dx;ty+=dy; panLast={x:e.clientX,y:e.clientY}; render(); }
-    else if(pts.size===2){ const a=[...pts.values()],nd=dist(a[0],a[1]),nm=mid(a[0],a[1]),rect=map.getBoundingClientRect(),fc=nd/(lastDist||nd),px=nm.x-rect.left,py=nm.y-rect.top,ns=clampS(s*fc),r=ns/s; tx=px-(px-tx)*r;ty=py-(py-ty)*r;s=ns; tx+=nm.x-lastMid.x;ty+=nm.y-lastMid.y; lastDist=nd;lastMid=nm;moved+=24; render(); } });
-  function handleTap(cx,cy){ const el=document.elementFromPoint(cx,cy); const mk=el&&el.closest?el.closest('.mk'):null; if(!mk)return; if(mk.dataset.id) openPlace(mk.dataset.id); else if(mk.classList.contains('clu')) zoomAt(parseFloat(mk.style.left),parseFloat(mk.style.top),1.75); else if(mk.dataset.friend) openFriend(mk.dataset.friend); }
-  function endPt(e){ const tap = pts.size===1 && moved<10; pts.delete(e.pointerId); if(pts.size<2)lastMid=null; if(pts.size===1){const v=[...pts.values()][0];panLast={x:v.x,y:v.y};} if(pts.size===0){ panLast=null; map.classList.remove('grab'); if(tap && e.type==='pointerup') handleTap(e.clientX,e.clientY); } }
-  map.addEventListener('pointerup',endPt); map.addEventListener('pointercancel',endPt);
-  map.addEventListener('wheel',e=>{ e.preventDefault(); const r=map.getBoundingClientRect(); zoomAt(e.clientX-r.left,e.clientY-r.top,e.deltaY<0?1.12:0.89); },{passive:false});
-  map.addEventListener('dblclick',e=>{ const r=map.getBoundingClientRect(); zoomAt(e.clientX-r.left,e.clientY-r.top,1.6); });
-  $('zin').onclick=()=>zoomAt(map.clientWidth/2,map.clientHeight/2,1.3);
-  $('zout').onclick=()=>zoomAt(map.clientWidth/2,map.clientHeight/2,0.77);
+  markers.addEventListener('click',e=>{ const mk=e.target.closest('.mk'); if(!mk)return; if(mk.dataset.id) openPlace(mk.dataset.id); else if(mk.classList.contains('clu')){ const ll=mlmap.unproject([parseFloat(mk.style.left),parseFloat(mk.style.top)]); mlmap.easeTo({center:ll, zoom:Math.min(18,mlmap.getZoom()+1.4)}); } else if(mk.dataset.friend) openFriend(mk.dataset.friend); });
+  function initMap(){
+    mlmap=new maplibregl.Map({ container:'mlmap', style:'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json', center:[HERE.lng,HERE.lat], zoom:START_Z, attributionControl:false, dragRotate:false, pitchWithRotate:false });
+    mlmap.addControl(new maplibregl.AttributionControl({compact:true}),'bottom-left');
+    if(mlmap.touchZoomRotate && mlmap.touchZoomRotate.disableRotation) mlmap.touchZoomRotate.disableRotation();
+    mlmap.on('load',()=>{ mlReady=true; render(); });
+    mlmap.on('move',render); mlmap.on('zoom',render); mlmap.on('resize',render);
+  }
+  $('zin').onclick=()=>{ if(mlmap) mlmap.zoomIn(); };
+  $('zout').onclick=()=>{ if(mlmap) mlmap.zoomOut(); };
 
   (function(){ const live=Object.values(places).filter(p=>p.live).slice(0,7);
     $('dvdots').innerHTML = live.map((p,i)=>{ const left=12+i*12+sd(p.name,'dl')*6, top=28+sd(p.name,'dt')*46;
@@ -642,10 +616,10 @@
 
   let tT; function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(tT); tT=setTimeout(()=>t.classList.remove('on'),2400); }
   function hideHint(){ const h=$('hint'); if(h)h.style.opacity=0; }
-  function init(){ cacheIcons(); buildCity(); center(HEREX,HEREY,1.2); }
-  $('enter').onclick=()=>{ $('splash').classList.add('gone'); setTimeout(()=>center(HEREX,HEREY,1.2),60); };
+  function init(){ cacheIcons(); initMap(); }
+  $('enter').onclick=()=>{ $('splash').classList.add('gone'); setTimeout(()=>{ if(mlmap) mlmap.resize(); render(); },140); };
   window.addEventListener('load',init);
-  setTimeout(()=>{ if(!markers.innerHTML){ init(); } },200);
+  setTimeout(()=>{ if(!mlmap){ init(); } },300);
   setTimeout(hideHint,6500);
 </script>
 </body>

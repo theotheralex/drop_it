@@ -506,7 +506,7 @@
 
   const STV=[ {x:wx(-122.4268),n:'Dolores St'},{x:wx(-122.4243),n:'Guerrero St'},{x:wx(-122.4214),n:'Valencia St',m:1},{x:wx(-122.4185),n:'Mission St',m:1},{x:wx(-122.4160),n:'S Van Ness'},{x:wx(-122.4120),n:'Folsom St'} ];
   const STH=[ {y:wy(37.7649),n:'16th St'},{y:wy(37.7617),n:'18th St'},{y:wy(37.7592),n:'20th St'},{y:wy(37.7555),n:'22nd St'},{y:wy(37.7522),n:'24th St'},{y:wy(37.7485),n:'Cesar Chavez'} ];
-  let FILTER='all', SEARCH='', userDrops=[], curSeg='now';
+  let FILTER='all', SEARCH='', userDrops=[], curSeg='now', currentPlaceId=null;
   const map=$('map'), markers=$('markers');
   const CR=48, DOTS_Z=13.2, LABELS_Z=14.2, CLUSTER_Z=14.9, START_Z=14.4;
   let mlmap=null, mlReady=false;
@@ -580,8 +580,12 @@
   $('dvfeed').addEventListener('click',e=>{ const c=e.target.closest('.ev'); if(c) openPlace(c.dataset.id); });
   discoverFeed('now');
 
+  const OSRM_BASE='https://routing.openstreetmap.de';
+  function osrmMin(prof,p){ const u=`${OSRM_BASE}/${prof}/route/v1/driving/${HERE.lng},${HERE.lat};${p.lng},${p.lat}?overview=false`; return fetch(u).then(r=>r.ok?r.json():null).then(j=>(j&&j.code==='Ok'&&j.routes&&j.routes[0])?Math.max(1,Math.round(j.routes[0].duration/60)):null).catch(()=>null); }
+  function applyEta(p){ if(currentPlaceId!==p.id||!p.etaReal)return; const e=p.etaReal; if(e.walk)$('s-walk').textContent=e.walk+' min'; if(e.drive){ $('s-drive').textContent=e.drive+' min'; $('s-transit').textContent=Math.max(2,Math.round(e.drive*2.1))+' min'; } }
+  function fetchEta(p){ if(p.etaReal){ applyEta(p); return; } Promise.all([osrmMin('routed-foot',p),osrmMin('routed-car',p)]).then(([w,d])=>{ if(w||d){ p.etaReal={walk:w,drive:d}; applyEta(p); } }); }
   function ratingBars(p){ return [5,4,3,2,1].map((st,i)=>`<div class="rbar"><span class="lab">${st}</span><span class="star">★</span><span class="track"><span class="fill" style="width:${p.rb[i]}%"></span></span><span class="pct">${p.rb[i]}%</span></div>`).join(''); }
-  function openPlace(id){ const p=places[id]; if(!p)return; hideHint();
+  function openPlace(id){ const p=places[id]; if(!p)return; currentPlaceId=id; hideHint();
     $('s-name').innerHTML=p.name+(p.live?' <span class="livebadge"><span class="d"></span>LIVE</span>':'');
     $('s-cat').textContent=p.catLabel; $('s-stars').textContent='★ '+p.stars; $('s-rev').textContent=p.rev+' ratings';
     $('s-walk').textContent=p.walk; $('s-drive').textContent=p.drive; $('s-transit').textContent=p.transit; $('s-blurb').textContent=p.blurb;
@@ -596,9 +600,9 @@
     $('s-photos').innerHTML=cells.map((c,i)=>`<div class="pcell" style="${c.u?`background-image:url('${c.u}')`:`background:${gx(c.g)}`}">${i===5?'<div class="more">+24</div>':''}</div>`).join('');
     $('s-rnum').textContent=p.stars; $('s-rcnt').textContent=p.rev+' ratings'; $('s-rbars').innerHTML=ratingBars(p);
     $('s-reviews').innerHTML = p.reviews.length ? p.reviews.map(r=>`<div class="r"><div class="ra" style="background:${r[1]}">${r[0]}</div><div class="rt"><span class="rn">${r[2]}</span> <span class="rd">· ${r[3]}</span><br>${r[4]}<div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap;">${[...reactTags].sort((a,b)=>sd(p.name,a)-sd(p.name,b)).slice(0,2).map(t=>`<span style="font-size:9.5px;color:var(--dim);background:rgba(255,255,255,.04);border:1px solid var(--line);padding:3px 7px;border-radius:999px;">${t}</span>`).join('')}</div></div></div>`).join('') : '<div style="color:var(--mute);font-size:13px;">No friends have dropped a take here yet — be the first.</div>';
-    $('sheet').scrollTop=0; openSheet();
+    $('sheet').scrollTop=0; fetchEta(p); openSheet();
   }
-  function openFriend(id){ const f=friendsMeta[id]; if(!f)return; hideHint();
+  function openFriend(id){ const f=friendsMeta[id]; if(!f)return; currentPlaceId=null; hideHint();
     $('s-name').textContent=f.name; $('s-cat').textContent=f.where+' · '+f.ago; $('s-stars').textContent=''; $('s-rev').textContent='';
     $('s-walk').textContent='–'; $('s-drive').textContent='–'; $('s-transit').textContent='–';
     $('s-blurb').textContent=f.note+'  (You only ever see a neighborhood glow — never an exact location.)';

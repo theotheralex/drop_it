@@ -26,14 +26,10 @@
   .ld { width:6px; height:6px; border-radius:50%; background:var(--coral); display:inline-block; animation:blink 1.4s infinite; }
   @keyframes blink { 50%{opacity:.3} }
 
-  .status { height:42px; display:flex; align-items:center; justify-content:space-between; padding:0 24px; flex-shrink:0; font-size:14px; font-weight:600; z-index:30; }
-
   .views { flex:1; position:relative; overflow:hidden; }
   .view { position:absolute; inset:0; opacity:0; pointer-events:none; transition:opacity .25s; overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none; }
   .view::-webkit-scrollbar { display:none; }
   .view.on { opacity:1; pointer-events:auto; }
-  #v-map { top:-42px; } /* let the map bleed up behind the status bar */
-  #v-map .map { padding-top:42px; }
 
   .map { position:absolute; inset:0; overflow:hidden; background:#0c1018; }
   #mlmap { position:absolute; inset:0; z-index:1; }
@@ -53,7 +49,7 @@
   .zoneblob { position:absolute; width:155px; height:155px; border-radius:50%; filter:blur(4px); opacity:.4; transform:translate(-50%,-50%); }
 
   .markers { position:absolute; inset:0; pointer-events:none; z-index:6; }
-  .markers .mk { position:absolute; pointer-events:auto; cursor:pointer; }
+  .markers .mk { position:absolute; pointer-events:none; }
   .streetlabels { position:absolute; inset:0; pointer-events:none; z-index:5; }
   .slbl { position:absolute; font-size:11px; font-weight:600; color:rgba(241,237,228,.55); letter-spacing:.04em; white-space:nowrap; text-shadow:0 1px 4px rgba(0,0,0,.9); }
   .slbl.v { transform:translate(-50%,-50%) rotate(-90deg); }
@@ -79,13 +75,13 @@
   .mk.fbadge { transform:translate(-50%,-50%); width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:#fff; border:2.5px solid rgba(255,255,255,0.85); box-shadow:0 4px 12px rgba(0,0,0,0.45); }
 
   .mscrim { position:absolute; top:0; left:0; right:0; height:128px; background:linear-gradient(180deg, rgba(5,6,10,.7), transparent); z-index:10; pointer-events:none; }
-  .mtop { position:absolute; top:50px; left:12px; right:12px; z-index:14; display:flex; align-items:center; gap:10px; }
+  .mtop { position:absolute; top:calc(env(safe-area-inset-top, 0px) + 14px); left:12px; right:12px; z-index:14; display:flex; align-items:center; gap:10px; }
   .avatar { width:40px; height:40px; border-radius:50%; flex-shrink:0; background:linear-gradient(135deg,var(--coral-2),var(--violet)); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; color:#fff; border:2px solid rgba(255,255,255,.25); box-shadow:0 4px 12px rgba(0,0,0,.45); }
   .chips2 { flex:1; display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; }
   .chips2::-webkit-scrollbar { display:none; }
   .chip { flex-shrink:0; padding:8px 14px; border-radius:999px; background:rgba(20,24,34,0.92); border:1px solid var(--line); font-size:12.5px; font-weight:600; color:var(--dim); white-space:nowrap; }
   .chip.on { background:var(--coral); color:#fff; border-color:var(--coral); }
-  .searchwrap { position:absolute; top:100px; left:12px; right:12px; z-index:16; }
+  .searchwrap { position:absolute; top:calc(env(safe-area-inset-top, 0px) + 64px); left:12px; right:12px; z-index:16; }
   .searchpill { height:42px; border-radius:999px; background:rgba(18,22,32,.93); border:1px solid var(--line); display:flex; align-items:center; gap:9px; padding:0 15px; box-shadow:0 4px 14px rgba(0,0,0,.3); }
   .searchpill input { flex:1; min-width:0; background:none; border:none; outline:none; color:var(--text); font-family:inherit; font-size:13.5px; font-weight:500; }
   .searchpill input::placeholder { color:var(--mute); }
@@ -247,8 +243,6 @@
 </head>
 <body>
 <div class="phone"><div class="screen">
-
-  <div class="status"><span>9:41</span><span>●●● 📶 🔋</span></div>
 
   <div class="views">
     <div class="view on" id="v-map">
@@ -548,12 +542,21 @@
   let rafPend=false;
   function scheduleRender(){ if(rafPend)return; rafPend=true; requestAnimationFrame(()=>{ rafPend=false; render(); }); }
   function reposition(){ if(!mlmap||!mlReady)return; const nd=markers.children; for(let i=0;i<nd.length;i++){ const el=nd[i], lng=parseFloat(el.dataset.lng), lat=parseFloat(el.dataset.lat); if(isNaN(lng))continue; const s=mlmap.project([lng,lat]); el.style.left=s.x+'px'; el.style.top=s.y+'px'; } }
-  markers.addEventListener('click',e=>{ const mk=e.target.closest('.mk'); if(!mk)return; if(mk.dataset.id) openPlace(mk.dataset.id); else if(mk.classList.contains('clu')){ const ll=mlmap.unproject([parseFloat(mk.style.left),parseFloat(mk.style.top)]); mlmap.easeTo({center:ll, zoom:Math.min(18,mlmap.getZoom()+1.4)}); } else if(mk.dataset.friend) openFriend(mk.dataset.friend); });
+  function mapClick(e){
+    const px=e.point.x, py=e.point.y; let best=null, bestD=1e9;
+    const nd=markers.children;
+    for(let i=0;i<nd.length;i++){ const el=nd[i]; if(el.classList.contains('fglow')||el.classList.contains('here')) continue; const x=parseFloat(el.style.left)||0; let y=parseFloat(el.style.top)||0; if(el.classList.contains('pin')) y-=17; const d=Math.hypot(x-px,y-py); if(d<bestD){ bestD=d; best=el; } }
+    if(!best || bestD>30) return;
+    if(best.dataset.id) openPlace(best.dataset.id);
+    else if(best.classList.contains('clu')){ mlmap.easeTo({center:[parseFloat(best.dataset.lng),parseFloat(best.dataset.lat)], zoom:Math.min(18,mlmap.getZoom()+1.4)}); }
+    else if(best.dataset.friend) openFriend(best.dataset.friend);
+  }
   function initMap(){
     mlmap=new maplibregl.Map({ container:'mlmap', style:'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json', center:[HERE.lng,HERE.lat], zoom:START_Z, attributionControl:false, dragRotate:false, pitchWithRotate:false });
     mlmap.addControl(new maplibregl.AttributionControl({compact:true}),'bottom-left');
     if(mlmap.touchZoomRotate && mlmap.touchZoomRotate.disableRotation) mlmap.touchZoomRotate.disableRotation();
     mlmap.on('load',()=>{ mlReady=true; render(); });
+    mlmap.on('click', mapClick);
     mlmap.on('move',reposition); mlmap.on('zoom',scheduleRender); mlmap.on('moveend',render); mlmap.on('resize',render);
   }
   $('zin').onclick=()=>{ if(mlmap) mlmap.zoomIn(); };

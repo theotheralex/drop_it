@@ -54,14 +54,16 @@
   .slbl.h { transform:translate(0,-50%); }
   @keyframes pingC { 0%{transform:translate(-50%,-50%) scale(.5);opacity:.85} 100%{transform:translate(-50%,-50%) scale(2.3);opacity:0} }
   .mk.pin { transform:translate(-50%,-100%); }
-  .mk.pin .body { width:34px; height:34px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); display:flex; align-items:center; justify-content:center; border:2px solid #fff; box-shadow:0 4px 9px rgba(0,0,0,0.4); color:#fff; }
-  .mk.pin .body svg { transform:rotate(45deg); width:16px; height:16px; stroke:#fff; }
-  .mk.pin .ring, .mk.pin .ring2 { position:absolute; left:50%; top:17px; transform:translate(-50%,-50%); width:46px; height:46px; border-radius:50%; border:2px solid currentColor; }
-  .mk.pin .lbl { position:absolute; top:calc(100% + 3px); left:50%; transform:translateX(-50%); padding:3px 8px; background:rgba(10,13,20,.92); border:1px solid var(--line); border-radius:999px; font-size:10px; font-weight:600; white-space:nowrap; display:flex; align-items:center; gap:4px; box-shadow:0 4px 10px rgba(0,0,0,.4); }
+  .mk.pin .body { width:28px; height:28px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); display:flex; align-items:center; justify-content:center; border:1.5px solid rgba(255,255,255,.92); box-shadow:0 2px 6px rgba(0,0,0,0.32); color:#fff; }
+  .mk.pin .body svg { transform:rotate(45deg); width:13px; height:13px; stroke:#fff; }
+  .mk.pin .ring, .mk.pin .ring2 { position:absolute; left:50%; top:14px; transform:translate(-50%,-50%); width:40px; height:40px; border-radius:50%; border:2px solid currentColor; }
+  .mk.pin .lbl { position:absolute; top:calc(100% + 2px); left:50%; transform:translateX(-50%); padding:2px 6px; background:rgba(10,13,20,.72); border-radius:999px; font-size:9.5px; font-weight:600; white-space:nowrap; display:flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,.3); }
   .mk.pin .lbl .live { width:4.5px; height:4.5px; border-radius:50%; animation:blink 1.3s infinite; }
   .mk.dot { transform:translate(-50%,-50%); }
-  .mk.dot .d { width:13px; height:13px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.5); }
-  .mk.dot .ring { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:20px; height:20px; border-radius:50%; border:2px solid currentColor; }
+  .mk.dot .d { width:10px; height:10px; border-radius:50%; border:1.5px solid rgba(255,255,255,.9); box-shadow:0 1px 4px rgba(0,0,0,.4); }
+  .mk.dot .ring { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:16px; height:16px; border-radius:50%; border:2px solid currentColor; }
+  .mk.pin.calm .body { filter:saturate(.5) brightness(.9); }
+  .mk.dot.calm .d { filter:saturate(.5) brightness(.95); }
   .mk.clu { transform:translate(-50%,-50%); }
   .mk.clu .c { min-width:38px; height:38px; padding:0 8px; border-radius:999px; background:rgba(16,20,30,.94); border:2px solid rgba(255,255,255,.85); display:flex; align-items:center; justify-content:center; gap:5px; font-weight:700; font-size:14px; box-shadow:0 5px 14px rgba(0,0,0,.5); }
   .mk.clu .dotset { display:flex; }
@@ -255,7 +257,7 @@
   .tcard .trow .star { color:var(--amber); }
   /* ---- map style modes ---- */
   body.m-light #mlmap, body.m-light #map { background:#e9e6df; }
-  body.m-light .mk.pin .lbl { background:#fff; color:#1c1a16; border-color:rgba(0,0,0,.1); box-shadow:0 3px 8px rgba(0,0,0,.16); }
+  body.m-light .mk.pin .lbl { background:rgba(255,255,255,.82); color:#1c1a16; box-shadow:0 2px 6px rgba(0,0,0,.14); }
   body.m-light .mk.pin .body { box-shadow:0 3px 7px rgba(0,0,0,.3); }
   .mk.lm { display:flex; transform:translate(-50%,-50%); flex-direction:column; align-items:center; gap:3px; }
   .mk.lm .lmchip { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(12,15,22,.72); border:2px solid currentColor; box-shadow:0 3px 10px rgba(0,0,0,.5); }
@@ -592,9 +594,9 @@
     const ic=p.icon==='TACO'?TACO:(ICONHTML[p.icon]||'');
     const lbl=withLabel?`<div class="lbl">${p.live?`<span class="live" style="background:${p.dot}"></span>`:''}${p.name}</div>`:'';
     const flame=(withLabel&&HOT.has(p.id))?`<div class="flame">${FLAME_SVG}</div>`:'';
-    return `<div class="mk pin" data-id="${p.id}" data-lng="${p.lng}" data-lat="${p.lat}" style="left:${sx}px;top:${sy}px;color:${p.dot}"><div class="body" style="background:${p.fill}">${ic}</div>${flame}${ring}${lbl}</div>`;
+    return `<div class="mk pin${HOT.has(p.id)?'':' calm'}" data-id="${p.id}" data-lng="${p.lng}" data-lat="${p.lat}" style="left:${sx}px;top:${sy}px;color:${p.dot}"><div class="body" style="background:${p.fill}">${ic}</div>${flame}${ring}${lbl}</div>`;
   }
-  function dotMK(p,sx,sy){ const ring=p.live?`<div class="ring" style="animation:pingC ${(2.6-p.busy*1.3).toFixed(2)}s ease-out infinite"></div>`:''; return `<div class="mk dot" data-id="${p.id}" data-lng="${p.lng}" data-lat="${p.lat}" style="left:${sx}px;top:${sy}px;color:${p.dot}"><div class="d" style="background:${p.fill}"></div>${ring}</div>`; }
+  function dotMK(p,sx,sy){ const ring=p.live?`<div class="ring" style="animation:pingC ${(2.6-p.busy*1.3).toFixed(2)}s ease-out infinite"></div>`:''; return `<div class="mk dot${HOT.has(p.id)?'':' calm'}" data-id="${p.id}" data-lng="${p.lng}" data-lat="${p.lat}" style="left:${sx}px;top:${sy}px;color:${p.dot}"><div class="d" style="background:${p.fill}"></div>${ring}</div>`; }
   function cluMK(cx,cy,grp){ const dots=grp.slice(0,3).map(g=>`<span class="ds" style="background:${g.p.fill}"></span>`).join(''); const clng=grp.reduce((a,g)=>a+g.p.lng,0)/grp.length, clat=grp.reduce((a,g)=>a+g.p.lat,0)/grp.length; return `<div class="mk clu" data-lng="${clng}" data-lat="${clat}" style="left:${cx}px;top:${cy}px"><div class="c"><span class="dotset">${dots}</span>${grp.length}</div></div>`; }
   function fglowPx(lat){ const a=mlmap.project([0,lat]), b=mlmap.project([0,lat+0.0022]); return Math.max(34, Math.abs(a.y-b.y)); }
   function render(){
@@ -604,31 +606,41 @@
     const onScr=(x,y)=>x>=-M&&x<=W+M&&y>=-M&&y<=H+M;
     const hp=mlmap.project([HERE.lng,HERE.lat]);
     let html= onScr(hp.x,hp.y)?`<div class="mk here" data-lng="${HERE.lng}" data-lat="${HERE.lat}" style="left:${hp.x}px;top:${hp.y}px"><div class="ping"></div><div class="dot"></div></div>`:'';
-    LM.forEach(l=>{ const s=mlmap.project([l.lng,l.lat]); if(!onScr(s.x,s.y))return; html+=`<div class="mk lm" data-lng="${l.lng}" data-lat="${l.lat}" style="left:${s.x}px;top:${s.y}px"><div class="lmchip" style="color:${LM_C[l.t]}">${l.icon}</div><div class="lmlabel">${l.name}</div></div>`; });
     for(const k in FR){ const f=FR[k], c=mlmap.project([f.lng,f.lat]); if(!onScr(c.x,c.y))continue; const r=fglowPx(f.lat); html+=`<div class="mk fglow" data-lng="${f.lng}" data-lat="${f.lat}" style="left:${c.x}px;top:${c.y}px;width:${r*2}px;height:${r*2}px;background:radial-gradient(circle,${f.c},transparent 70%)"></div><div class="mk fbadge" data-friend="${k}" data-lng="${f.lng}" data-lat="${f.lat}" style="left:${c.x}px;top:${c.y}px;background:${f.g}">${f.init}</div>`; }
     userDrops.forEach(m=>{ const s=mlmap.project([m.lng,m.lat]); if(!onScr(s.x,s.y))return; html+=`<div class="mk moment" data-id="${m.pid}" data-lng="${m.lng}" data-lat="${m.lat}" style="left:${s.x}px;top:${s.y}px"><div class="mt" style="background-image:url('${m.photo}')"></div><div class="cam"><svg width="9" height="9" viewBox="0 0 24 24" fill="#fff"><rect x="3" y="7" width="18" height="13" rx="3"/><circle cx="12" cy="13.5" r="3.4" fill="#ff5b48"/></svg></div></div>`; });
+    const pLabels=[];
+    // --- Layer 1: landmarks (orientation anchors). Prominent zoomed out, lighter zoomed in. ---
+    const lmItems=LMK.map(l=>{ const s=mlmap.project([l.lng,l.lat]); return {l,sx:s.x,sy:s.y}; }).filter(it=>onScr(it.sx,it.sy)).sort((a,b)=>(b.l.pop||0)-(a.l.pop||0));
+    const lmMax = z<11?0 : z<13?12 : z<15?9 : 5, lmPlacedArr=[]; let lmPlaced=0;
+    for(const it of lmItems){ if(lmPlaced>=lmMax) break; const {l,sx,sy}=it;
+      if(lmPlacedArr.some(q=>Math.hypot(q.x-sx,q.y-sy)<44)) continue;
+      lmPlacedArr.push({x:sx,y:sy}); lmPlaced++;
+      let lbl=''; const w=14+l.name.length*5.4, r={x:sx-w/2,y:sy+14,w,h:15};
+      if(!pLabels.some(q=>!(r.x+r.w<q.x||r.x>q.x+q.w||r.y+r.h<q.y||r.y>q.y+q.h))){ pLabels.push(r); lbl=`<div class="lmlabel">${l.name}</div>`; }
+      html+=`<div class="mk lm" data-lng="${l.lng}" data-lat="${l.lat}" style="left:${sx}px;top:${sy}px"><div class="lmchip" style="color:${LM_C[l.t]||'#9aa3b2'}">${l.icon}</div>${lbl}</div>`;
+    }
+    // --- Layer 2: food/drink density budget. Held back when zoomed out so landmarks lead. ---
     const items=visible().map(p=>{ const s=mlmap.project([p.lng,p.lat]); return {p,sx:s.x,sy:s.y}; }).filter(it=>onScr(it.sx,it.sy));
-    let singles=[];
-    if(z<CLUSTER_Z){
-      const used=new Array(items.length).fill(false);
-      for(let i=0;i<items.length;i++){ if(used[i])continue; const grp=[items[i]]; used[i]=true;
-        for(let j=i+1;j<items.length;j++){ if(!used[j] && Math.hypot(items[i].sx-items[j].sx,items[i].sy-items[j].sy)<CR){ grp.push(items[j]); used[j]=true; } }
-        if(grp.length===1){ singles.push(grp[0]); }
-        else { const cx=grp.reduce((a,g)=>a+g.sx,0)/grp.length, cy=grp.reduce((a,g)=>a+g.sy,0)/grp.length; html+=cluMK(cx,cy,grp); }
+    const order=[...items].sort((a,b)=>((HOT.has(b.p.id)?1:0)-(HOT.has(a.p.id)?1:0))||(b.p.pop-a.p.pop)||(b.p.tscore-a.p.tscore));
+    let fullMax;
+    if(z<11) fullMax=0;                                          // very far out: bare map, no markers
+    else if(z<12.5) fullMax=(lmPlaced>0)?0:6;
+    else if(z<13.5) fullMax=(lmPlaced>0)?3:8;
+    else if(z<15) fullMax=12; else if(z<16.5) fullMax=16; else fullMax=22;
+    if(FILTER!=='all' && z>=11) fullMax=Math.max(8, Math.round(fullMax*1.6));  // a real category filter (not "all") shows more, but never on the bare far-out map
+    const dotsMax=Math.round(fullMax*1.6), FULL_GAP=46, DOT_GAP=22;
+    const placedPins=[], placedDots=[]; let nFull=0, nDot=0;
+    for(const it of order){
+      const p=it.p, sx=it.sx, sy=it.sy, cx=sx, cy=sy-14;
+      if(nFull<fullMax && !placedPins.some(q=>Math.hypot(q.x-cx,q.y-cy)<FULL_GAP)){
+        placedPins.push({x:cx,y:cy}); nFull++;
+        let withLabel=false; const w=16+p.name.length*5.4, r={x:sx-w/2,y:sy+2,w,h:15};
+        if(!pLabels.some(q=>!(r.x+r.w<q.x||r.x>q.x+q.w||r.y+r.h<q.y||r.y>q.y+q.h))){ pLabels.push(r); withLabel=true; }
+        html+=pinMK(p,sx,sy,withLabel);
+      } else if(nDot<dotsMax && !placedPins.concat(placedDots).some(q=>Math.hypot(q.x-sx,q.y-sy)<DOT_GAP)){
+        placedDots.push({x:sx,y:sy}); nDot++; html+=dotMK(p,sx,sy);
       }
-    } else { singles=items; }
-    // Declutter: most-notable spots get labeled pins; crowded neighbors collapse
-    // to dots; a name only shows when it doesn't overlap one already placed.
-    const dense=z>=CLUSTER_Z;
-    const order=[...singles].sort((a,b)=>((HOT.has(b.p.id)?1:0)-(HOT.has(a.p.id)?1:0))||(b.p.pop-a.p.pop)||(b.p.tscore-a.p.tscore));
-    const pIcons=[], pLabels=[], asDot=new Set(), withLbl=new Set();
-    order.forEach(it=>{ const p=it.p, sx=it.sx, sy=it.sy; let pin=z>=DOTS_Z;
-      if(pin && dense){ const cx=sx, cy=sy-17; if(pIcons.some(q=>Math.hypot(q.x-cx,q.y-cy)<26)) pin=false; }
-      if(pin){ pIcons.push({x:sx,y:sy-17}); } else { asDot.add(p.id); }
-      if(pin && z>=LABELS_Z){ const w=18+p.name.length*5.7+(p.live?9:0), r={x:sx-w/2,y:sy+3,w,h:19};
-        if(!pLabels.some(q=>!(r.x+r.w<q.x||r.x>q.x+q.w||r.y+r.h<q.y||r.y>q.y+q.h))){ pLabels.push(r); withLbl.add(p.id); } }
-    });
-    singles.forEach(it=>{ const p=it.p; html+= asDot.has(p.id)?dotMK(p,it.sx,it.sy):pinMK(p,it.sx,it.sy,withLbl.has(p.id)); });
+    }
     markers.innerHTML=html;
   }
   let rafPend=false;
@@ -637,7 +649,7 @@
   function mapClick(e){
     const px=e.point.x, py=e.point.y; let best=null, bestD=1e9;
     const nd=markers.children;
-    for(let i=0;i<nd.length;i++){ const el=nd[i]; if(el.classList.contains('fglow')||el.classList.contains('here')||el.classList.contains('lm')) continue; const x=parseFloat(el.style.left)||0; let y=parseFloat(el.style.top)||0; if(el.classList.contains('pin')) y-=17; const d=Math.hypot(x-px,y-py); if(d<bestD){ bestD=d; best=el; } }
+    for(let i=0;i<nd.length;i++){ const el=nd[i]; if(el.classList.contains('fglow')||el.classList.contains('here')||el.classList.contains('lm')) continue; const x=parseFloat(el.style.left)||0; let y=parseFloat(el.style.top)||0; if(el.classList.contains('pin')) y-=14; const d=Math.hypot(x-px,y-py); if(d<bestD){ bestD=d; best=el; } }
     if(!best || bestD>30) return;
     if(best.dataset.id) openPlace(best.dataset.id);
     else if(best.classList.contains('clu')){ mlmap.easeTo({center:[parseFloat(best.dataset.lng),parseFloat(best.dataset.lat)], zoom:Math.min(18,mlmap.getZoom()+1.4)}); }
@@ -662,12 +674,14 @@
     {name:'Clarion Alley', lat:37.7626, lng:-122.4205, t:'mural', icon:LM_ART},
     {name:'Balmy Alley', lat:37.7510, lng:-122.4128, t:'mural', icon:LM_ART}
   ];
+  const LM_ICON={ transit:LM_TRAIN, park:LM_TREE, civic:LM_BLDG, mural:LM_ART };
+  let LMK = LM.map(l=>({...l, pop:5}));   // seeded with the Mission set until Bay-wide landmarks load
   let MAPMODE='dark'; try{ const _t=localStorage.getItem('dropit_theme'); if(_t==='light'||_t==='dark') MAPMODE=_t; }catch(e){}
   function initMap(){
     mlmap=new maplibregl.Map({ container:'mlmap', style:STYLE_DARK, center:[HERE.lng,HERE.lat], zoom:START_Z, attributionControl:false, dragRotate:false, pitchWithRotate:false });
     mlmap.addControl(new maplibregl.AttributionControl({compact:true, customAttribution:'Place data © OpenStreetMap contributors'}),'bottom-left');
     if(mlmap.touchZoomRotate && mlmap.touchZoomRotate.disableRotation) mlmap.touchZoomRotate.disableRotation();
-    mlmap.on('load',()=>{ mlReady=true; if(MAPMODE==='dark') tintParks(); render(); fetchViewport(); });
+    mlmap.on('load',()=>{ mlReady=true; if(MAPMODE==='dark') tintParks(); render(); fetchViewport(); fetchLandmarks(); });
     mlmap.on('click', mapClick);
     mlmap.on('move',reposition); mlmap.on('zoom',scheduleRender); mlmap.on('moveend',()=>{ render(); scheduleViewport(); }); mlmap.on('resize',render);
   }
@@ -823,7 +837,20 @@
       .then(rows=>{ if(Array.isArray(rows)&&rows.length){ buildPlaces(rows); cacheIcons(); render(); if(typeof discoverFeed==='function') discoverFeed(curSeg); if(dvmap) renderDv(); } })
       .catch(()=>{});
   }
-  function scheduleViewport(){ clearTimeout(vpTimer); vpTimer=setTimeout(fetchViewport,450); }
+  let lmLast='';
+  function fetchLandmarks(){
+    if(!mlmap||!mlReady) return;
+    const b=mlmap.getBounds();
+    const s=b.getSouth().toFixed(4), w=b.getWest().toFixed(4), n=b.getNorth().toFixed(4), e=b.getEast().toFixed(4);
+    const key=`${s},${w},${n},${e}`; if(key===lmLast) return; lmLast=key;
+    const url=`${SUPA_URL}/rest/v1/landmarks?select=name,type,lat,lng,area,pop,osm_id`
+      +`&lat=gte.${s}&lat=lte.${n}&lng=gte.${w}&lng=lte.${e}&order=pop.desc&limit=80`;
+    fetch(url,{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}})
+      .then(r=>r.ok?r.json():null)
+      .then(rows=>{ if(Array.isArray(rows)&&rows.length){ LMK=rows.map(l=>({name:l.name,lat:l.lat,lng:l.lng,t:l.type,pop:l.pop||0,icon:LM_ICON[l.type]||LM_BLDG})); render(); } })
+      .catch(()=>{});
+  }
+  function scheduleViewport(){ clearTimeout(vpTimer); vpTimer=setTimeout(()=>{ fetchViewport(); fetchLandmarks(); },450); }
   function locateUser(opts){ opts=opts||{};
     if(!navigator.geolocation){ if(opts.announce) toast('Location not supported on this device'); return; }
     navigator.geolocation.getCurrentPosition(

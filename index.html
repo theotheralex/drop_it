@@ -793,7 +793,9 @@
     }
     // --- Layer 2: food/drink density budget. Held back when zoomed out so landmarks lead. ---
     const items=visible().map(p=>{ const s=mlmap.project([p.lng,p.lat]); return {p,sx:s.x,sy:s.y}; }).filter(it=>onScr(it.sx,it.sy));
-    const order=[...items].sort((a,b)=>((HOT.has(b.p.id)?1:0)-(HOT.has(a.p.id)?1:0))||(b.p.pop-a.p.pop)||(b.p.tscore-a.p.tscore));
+    const tasteOf=tasteScorer();
+    const tier=p=>{ const t=tasteOf(p); return t>=1.3?2:t>=0.45?1:0; };
+    const order=[...items].sort((a,b)=>(tier(b.p)-tier(a.p))||((HOT.has(b.p.id)?1:0)-(HOT.has(a.p.id)?1:0))||(b.p.pop-a.p.pop)||(b.p.tscore-a.p.tscore));
     let fullMax;
     if(z<11) fullMax=0;                                          // very far out: bare map, no markers
     else if(z<12.5) fullMax=(lmPlaced>0)?0:6;
@@ -1084,9 +1086,21 @@
 
   // ---- the taste loop: log what people do, weighted by intent ----
   const ACT_W={ open:1, video:2, expand:3, save:5, directions:5, post:6, skip:-2 };
+  // Local taste profile (per-device) — powers map-pin re-ranking. No network needed.
+  let TASTE={cat:{},type:{},area:{},_seeded:false};
+  function persistTaste(){ try{ localStorage.setItem('dropit_taste', JSON.stringify(TASTE)); }catch(e){} }
+  function bump(o,k,w){ if(!k||!(w>0)) return; o[k]=(o[k]||0)+w; }
+  function tasteLearn(p,w){ if(!p||!(w>0)) return; const cat=p.cat||CAT[p.type]||'food'; bump(TASTE.cat,cat,w); bump(TASTE.type,p.type,w*1.3); bump(TASTE.area,p.area,w*0.6); persistTaste(); }
+  function loadTaste(){ try{ TASTE=JSON.parse(localStorage.getItem('dropit_taste')||'null'); }catch(e){ TASTE=null; }
+    if(!TASTE||!TASTE.cat){ TASTE={cat:{},type:{},area:{},_seeded:false}; }
+    if(!TASTE._seeded){ Object.values(PLACEINFO).forEach(m=>{ const cat=CAT[m.type]||'food'; bump(TASTE.cat,cat,5); bump(TASTE.type,m.type,6.5); bump(TASTE.area,m.area,3); }); TASTE._seeded=true; persistTaste(); }
+  }
+  function tasteScorer(){ const mx=m=>{let x=0;for(const k in m)if(m[k]>x)x=m[k];return x;}; const mt=mx(TASTE.type), mc=mx(TASTE.cat), ma=mx(TASTE.area); const has=(mt+mc+ma)>0;
+    return p=> has ? ((mt?(TASTE.type[p.type]||0)/mt:0)*1.4 + (mc?(TASTE.cat[p.cat]||0)/mc:0)*0.8 + (ma?(TASTE.area[p.area]||0)/ma:0)*0.5) : 0; }
   function logInteraction(placeId, action){
     const p=places[placeId];
     if(!p && action!=='skip') return;
+    if(p && (ACT_W[action]||0)>0) tasteLearn(p, ACT_W[action]);
     const body={ client_id:CLIENT_ID, place_key:placeId||null, place_name:p?p.name:null, place_type:p?p.type:null, place_area:p?p.area:null, action, weight:(ACT_W[action]??1) };
     fetch(`${SUPA_URL}/rest/v1/interactions`, { method:'POST', headers:{...SUPA_HEAD, Prefer:'return=minimal'}, body:JSON.stringify(body) }).catch(()=>{});
   }
@@ -1154,7 +1168,7 @@
   function savedCount(){ return Object.keys(PLACEINFO).length; }
   function placeMini(id){ const p=places[id]; if(p) return {id,name:p.name,type:p.type,area:p.area,lat:p.lat,lng:p.lng}; return PLACEINFO[id]; }
   function rememberPlace(id){ const m=placeMini(id); if(m) PLACEINFO[id]=m; }
-  function addToList(lid,pid){ const L=listById(lid); if(!L)return; rememberPlace(pid); if(!L.items.includes(pid)) L.items.unshift(pid); persistLists(); }
+  function addToList(lid,pid){ const L=listById(lid); if(!L)return; rememberPlace(pid); if(!L.items.includes(pid)) L.items.unshift(pid); persistLists(); tasteLearn(places[pid]||PLACEINFO[pid], ACT_W.save); }
   function removeFromList(lid,pid){ const L=listById(lid); if(!L)return; L.items=L.items.filter(x=>x!==pid); if(!isSaved(pid)) delete PLACEINFO[pid]; persistLists(); }
   function quickSave(id){ rememberPlace(id); const L=defaultList(); if(!L.items.includes(id)) L.items.unshift(id); persistLists(); logInteraction(id,'save'); posLogged=true; afterSaveChange(id); }
   function afterSaveChange(id){ const wasFiltered=(FILTER==='saved'||(typeof FILTER==='string'&&FILTER.indexOf('list:')===0)); syncSaveBtn(currentPlaceId); renderLists(); renderListChips(); updateProfile(); if(wasFiltered) render(); }
@@ -1296,7 +1310,7 @@
     );
   }
   function loadPlaces(){ fetch('places.json').then(r=>r.ok?r.json():null).then(rows=>{ if(Array.isArray(rows)&&rows.length){ buildPlaces(rows); cacheIcons(); if(mlmap&&mlReady) render(); if(typeof discoverFeed==='function') discoverFeed(curSeg); if(dvmap) renderDv(); } }).catch(()=>{}); }
-  function init(){ loadLists(); applyMapMode(); cacheIcons(); initMap(); renderLists(); renderListChips(); renderDirPref(); applyName(); updateProfile(); if(!IS_IOS){ const a=document.querySelector('#dirprefopts [data-pref="apple"]'); if(a) a.style.display='none'; if(dirPref==='apple') setDirPref('ask'); } }
+  function init(){ loadLists(); loadTaste(); applyMapMode(); cacheIcons(); initMap(); renderLists(); renderListChips(); renderDirPref(); applyName(); updateProfile(); if(!IS_IOS){ const a=document.querySelector('#dirprefopts [data-pref="apple"]'); if(a) a.style.display='none'; if(dirPref==='apple') setDirPref('ask'); } }
   $('enter').onclick=()=>{ $('splash').classList.add('gone'); locateUser(); setTimeout(()=>{ if(mlmap) mlmap.resize(); render(); },140); };
   window.addEventListener('load',init);
   setTimeout(()=>{ if(!mlmap){ init(); } },300);

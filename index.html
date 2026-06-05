@@ -335,6 +335,16 @@
   .esrc .arr { margin-left:auto; color:var(--mute); }
   .chip-ev { color:var(--gold); border-color:rgba(212,162,71,.4); background:rgba(212,162,71,.12); }
   .chip-ev.on { background:var(--gold); color:#1a1206; border-color:var(--gold); }
+  .ev.evt { border-color:rgba(212,162,71,.32); }
+  .ev .evpill.gold { background:rgba(212,162,71,.94); color:#1a1206; }
+  .ev .evpill.gold svg { width:11px; height:11px; margin-right:1px; }
+  .ev .evrow .free { color:var(--green); font-weight:700; }
+  .ev .evrow .price { color:var(--gold); font-weight:700; }
+  .ev .evrow .interested { color:var(--gold); font-weight:600; }
+  .feedlabel { display:flex; align-items:center; gap:7px; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; padding:2px 2px; }
+  .feedlabel svg { width:14px; height:14px; }
+  .feedlabel.ev-l { color:var(--gold); }
+  .feedlabel.pl-l { color:var(--dim); margin-top:6px; }
   body.m-light .searchpill { background:rgba(255,255,255,0.96); box-shadow:0 4px 14px rgba(0,0,0,.12); }
   body.m-light .searchresults { background:rgba(255,255,255,0.98); box-shadow:0 14px 34px rgba(0,0,0,.2); }
   body.m-light .sresult:active { background:rgba(0,0,0,.05); }
@@ -557,9 +567,10 @@
       <h2 id="e-name"></h2>
       <div class="scat" id="e-venue"></div>
       <div class="ewhen" id="e-when"></div>
-      <div class="etas" id="e-etas"><div class="eta"><div class="t" id="e-walk">–</div><div class="m">walk</div></div><div class="eta"><div class="t" id="e-drive">–</div><div class="m">drive</div></div><div class="eta"><div class="t" id="e-transit">–</div><div class="m">transit</div></div></div>
-      <div class="acts"><button class="primary" id="e-tix"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/><path d="M13 7v10" stroke-dasharray="1.5 2.5"/></svg>Get tickets</button><button class="ghost" id="e-dir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 11l19-9-9 19-2-8z"/></svg>Directions</button></div>
+      <div class="etas" id="e-etas"><div class="eta" data-mode="walking"><div class="t" id="e-walk">–</div><div class="m">walk</div></div><div class="eta" data-mode="driving"><div class="t" id="e-drive">–</div><div class="m">drive</div></div><div class="eta" data-mode="transit"><div class="t" id="e-transit">–</div><div class="m">transit</div></div></div>
+      <div class="acts"><button class="ico" id="e-save"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></button><button class="primary" id="e-tix"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/><path d="M13 7v10" stroke-dasharray="1.5 2.5"/></svg>Get tickets</button><button class="ghost" id="e-dir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 11l19-9-9 19-2-8z"/></svg>Directions</button></div>
       <div class="sec"><div class="blurb" id="e-blurb"></div></div>
+      <div class="sec" id="e-fhere-sec" style="display:none"><div id="e-fhere"></div></div>
       <div class="sec" id="e-src-sec"><button class="esrc" id="e-src"></button></div>
     </div>
   </div>
@@ -778,7 +789,8 @@
   const STV=[ {x:wx(-122.4268),n:'Dolores St'},{x:wx(-122.4243),n:'Guerrero St'},{x:wx(-122.4214),n:'Valencia St',m:1},{x:wx(-122.4185),n:'Mission St',m:1},{x:wx(-122.4160),n:'S Van Ness'},{x:wx(-122.4120),n:'Folsom St'} ];
   const STH=[ {y:wy(37.7649),n:'16th St'},{y:wy(37.7617),n:'18th St'},{y:wy(37.7592),n:'20th St'},{y:wy(37.7555),n:'22nd St'},{y:wy(37.7522),n:'24th St'},{y:wy(37.7485),n:'Cesar Chavez'} ];
   let FILTER='all', SEARCH='', userDrops=[], curSeg='now', currentPlaceId=null, selId=null, openedAt=0, posLogged=false;
-  const EVENTS={}; let curEventId=null;
+  const EVENTS={}; let curEventId=null, curEvent=null;
+  const EV_TIX_OUTLINE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/></svg>';
   const map=$('map'), markers=$('markers');
   const CR=48, DOTS_Z=13.2, LABELS_Z=14.2, CLUSTER_Z=14.9, START_Z=14.4;
   let mlmap=null, mlReady=false;
@@ -814,19 +826,7 @@
       if(!pLabels.some(q=>!(r.x+r.w<q.x||r.x>q.x+q.w||r.y+r.h<q.y||r.y>q.y+q.h))){ pLabels.push(r); lbl=`<div class="lmlabel">${l.name}</div>`; }
       html+=`<div class="mk lm" data-lng="${l.lng}" data-lat="${l.lat}" style="left:${sx}px;top:${sy}px"><div class="lmchip" style="color:${LM_C[l.t]||'#9aa3b2'}">${l.icon}</div>${lbl}</div>`;
     }
-    if(FILTER==='events'){
-      const now=Date.now();
-      const eAll=Object.values(EVENTS).filter(ev=>ev.start && ev.startMs>=now-3*3600*1000);
-      const eitems=eAll.map(ev=>{ const s=mlmap.project([ev.lng,ev.lat]); return {ev,sx:s.x,sy:s.y}; }).filter(it=>onScr(it.sx,it.sy)).sort((a,b)=>a.ev.startMs-b.ev.startMs);
-      const eMax = z<12?6 : z<14?12 : z<16?18 : 26; const placedEv=[]; let nEv=0;
-      for(const it of eitems){ if(nEv>=eMax) break; const ev=it.ev, sx=it.sx, sy=it.sy, cx=sx, cy=sy-14;
-        if(placedEv.some(q=>Math.hypot(q.x-cx,q.y-cy)<46)) continue; placedEv.push({x:cx,y:cy}); nEv++;
-        let lbl=''; const short=ev.title.length>15?ev.title.slice(0,14)+'…':ev.title; const txt=(ev.start?dayShort(ev.start)+' '+fmtTimeShort(ev.start)+' · ':'')+short;
-        const w=18+txt.length*5.2, r={x:sx-w/2,y:sy+2,w,h:15};
-        if(!pLabels.some(q=>!(r.x+r.w<q.x||r.x>q.x+q.w||r.y+r.h<q.y||r.y>q.y+q.h))){ pLabels.push(r); lbl=`<div class="lbl">${txt}</div>`; }
-        html+=`<div class="mk pin calm${ev.id===curEventId?' selected':''}" data-ev="${ev.id}" data-lng="${ev.lng}" data-lat="${ev.lat}" style="left:${sx}px;top:${sy}px;color:${ev.dot}"><div class="body" style="background:${gx(ev.g)}">${EV_TICKET}</div>${lbl}</div>`;
-      }
-    } else {
+    if(FILTER!=='events'){
     // --- Layer 2: food/drink density budget. Held back when zoomed out so landmarks lead. ---
     const items=visible().map(p=>{ const s=mlmap.project([p.lng,p.lat]); return {p,sx:s.x,sy:s.y}; }).filter(it=>onScr(it.sx,it.sy));
     const tasteOf=tasteScorer();
@@ -852,6 +852,7 @@
       }
     }
     }
+    html += eventMarkersHTML(eventsToShow(), z, pLabels);
     markers.innerHTML=html;
     markers.classList.toggle('has-selection', !!selId);
   }
@@ -924,20 +925,45 @@
   function renderTrending(){ const rail=$('dvtrend'); if(!rail) return; const top=TRENDING.slice(0,10);
     rail.innerHTML=top.map((p,i)=>`<div class="tcard" data-id="${p.id}"><div class="timg" style="background:${gx(p.g[0])}"><div class="trank">${i+1}</div>${i<3?`<div class="tflame">${FLAME_SVG}</div>`:''}</div><div class="tnm">${p.name}</div><div class="trow">${p.rated?('<span class="star">★</span>'+p.stars):'<span style="color:var(--mute)">New</span>'}<span>·</span>${p.live?p.buslevel:(p.area||p.type)}</div></div>`).join('');
   }
+  function eventsForSeg(seg){
+    const now=Date.now(); const list=Object.values(EVENTS).filter(ev=>ev.start && !isNaN(ev.startMs));
+    const td=new Date(); const sameDay=d=>d.getFullYear()===td.getFullYear()&&d.getMonth()===td.getMonth()&&d.getDate()===td.getDate();
+    const dow=td.getDay(); const satOff=(6-dow+7)%7; const sat=new Date(td.getFullYear(),td.getMonth(),td.getDate()+satOff); const sun=new Date(sat.getFullYear(),sat.getMonth(),sat.getDate()+1);
+    const k=(x,y)=>x.getFullYear()===y.getFullYear()&&x.getMonth()===y.getMonth()&&x.getDate()===y.getDate();
+    const onWknd=d=> k(d,sat)||k(d,sun)||(dow===0&&sameDay(d));
+    let f;
+    if(seg==='now') f=ev=>ev.startMs>=now-3*3600*1000 && ev.startMs<=now+2*3600*1000;
+    else if(seg==='tonight') f=ev=>sameDay(ev.start) && ev.startMs>=now-3*3600*1000;
+    else f=ev=>onWknd(ev.start) && ev.startMs>=now-3*3600*1000;
+    return list.filter(f).sort((a,b)=>a.startMs-b.startMs).slice(0,12);
+  }
+  function evFeedCard(ev){
+    const day=ev.start?dayShort(ev.start):'', tm=ev.start?fmtTime(ev.start):'';
+    const price = ev.free? '<span class="free">Free</span>' : (ev.price? '<span class="price">'+ev.price+'</span>' : 'Ticketed');
+    const venue=ev.venue||ev.area||''; const walk=Math.max(1,Math.round(haversine(HERE.lat,HERE.lng,ev.lat,ev.lng)*20));
+    const n=ev.interested?ev.interested.length:0;
+    return `<div class="ev evt" data-ev="${ev.id}"><div class="evimg" style="background:${gx(ev.g)}"><div class="evpill gold">${EV_TIX_OUTLINE}${day?day.toUpperCase()+' · ':''}${tm}</div></div><div class="evbody"><div class="evnm">${ev.title}</div><div class="evrow">${venue?venue+' <span class="dot">·</span> ':''}${price} <span class="dot">·</span> ${walk} min walk</div>${n?`<div class="evrow"><span class="interested">${n} friend${n>1?'s':''} interested</span></div>`:''}</div></div>`;
+  }
   function discoverFeed(seg){
     renderTrending();
+    const evs=eventsForSeg(seg);
+    let evHTML='';
+    if(evs.length){ const lab = seg==='now'?'Events happening now' : seg==='tonight'?'Events tonight' : 'Events this weekend';
+      evHTML = `<div class="feedlabel ev-l">${EV_TIX_OUTLINE}${lab}</div>` + evs.map(evFeedCard).join(''); }
     let list=Object.entries(places);
     if(seg==='now') list=list.filter(([id,p])=>p.live);
     else if(seg==='tonight') list=list.filter(([id,p])=>['drinks','music'].includes(p.cat));
     else list=list.filter(([id,p])=>['outdoors','food'].includes(p.cat));
     list.sort((a,b)=>(b[1].live-a[1].live)||((+b[1].stars||0)-(+a[1].stars||0))||(b[1].pop-a[1].pop));
     list=list.slice(0,16);
-    $('dvfeed').innerHTML = list.map(([id,p])=>{ const fh=p.fhere.length;
+    const plHTML = list.map(([id,p])=>{ const fh=p.fhere.length;
       return `<div class="ev" data-id="${id}"><div class="evimg" style="background:${gx(p.g[0])}"><div class="evpill">${p.live?'<span class="ld"></span>LIVE · '+p.posts:(p.rated?(p.posts+' posts this wk'):(p.area||p.type))}</div></div><div class="evbody"><div class="evnm">${p.name}</div><div class="evrow">${p.rated?('<span class="star">★</span> '+p.stars+' <span class="dot">·</span> '):''}${p.dist} <span class="dot">·</span> ${p.walk} walk</div>${fh?`<div class="evrow"><span class="going">${fh} friend${fh>1?'s':''} here</span></div>`:''}</div></div>`;
-    }).join('') || '<div style="color:var(--mute);padding:20px 4px;font-size:13px;">Nothing in this window right now — check another tab.</div>';
+    }).join('');
+    const plLabel = (evHTML && plHTML) ? `<div class="feedlabel pl-l">${seg==='now'?'Open now':'Places nearby'}</div>` : '';
+    $('dvfeed').innerHTML = (evHTML + plLabel + plHTML) || '<div style="color:var(--mute);padding:20px 4px;font-size:13px;">Nothing in this window right now — check another tab.</div>';
   }
   document.querySelectorAll('#dvseg button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#dvseg button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); curSeg=b.dataset.seg; discoverFeed(b.dataset.seg); });
-  $('dvfeed').addEventListener('click',e=>{ const c=e.target.closest('.ev'); if(c) openPlace(c.dataset.id); });
+  $('dvfeed').addEventListener('click',e=>{ const c=e.target.closest('.ev'); if(!c)return; if(c.dataset.ev) openEvent(c.dataset.ev); else if(c.dataset.id) openPlace(c.dataset.id); });
   $('dvtrend').addEventListener('click',e=>{ const c=e.target.closest('.tcard'); if(c) openPlace(c.dataset.id); });
   $('dvforyou').addEventListener('click',e=>{ const c=e.target.closest('.tcard'); if(c&&c.dataset.id) openPlace(c.dataset.id); });
   discoverFeed('now');
@@ -999,12 +1025,12 @@
     $('scrim').classList.toggle('on', s==='full');   // peek leaves the map visible & tappable; full dims it
     sheetEl.style.transform = (s==='full') ? 'translateY(0px)' : ('translateY('+peekY()+'px)');
   }
-  function openSheet(state){ $('dropm').classList.remove('on'); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('listm').classList.remove('on'); $('newlistm').classList.remove('on'); $('esheet').classList.remove('on');
+  function openSheet(state){ $('dropm').classList.remove('on'); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('listm').classList.remove('on'); $('newlistm').classList.remove('on'); eSetState('closed', false);
     if(sheetState==='closed'){ sheetEl.style.transition='none'; sheetEl.style.transform='translateY(100%)'; sheetEl.classList.add('on'); void sheetEl.offsetHeight; }
     requestAnimationFrame(()=>setSheetState(state||'peek', true));
   }
   function openDrop(){ if(sheetState!=='closed') setSheetState('closed', true); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('scrim').classList.add('on'); $('dropm').classList.add('on'); }
-  function closeMenus(){ if(sheetState!=='closed') setSheetState('closed', true); $('dropm').classList.remove('on'); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('listm').classList.remove('on'); $('newlistm').classList.remove('on'); $('esheet').classList.remove('on'); }
+  function closeMenus(){ if(sheetState!=='closed') setSheetState('closed', true); $('dropm').classList.remove('on'); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('listm').classList.remove('on'); $('newlistm').classList.remove('on'); eSetState('closed', true); }
   function closeAll(){ closeMenus(); $('scrim').classList.remove('on'); if(selId){ selId=null; render(); } }
 
   (function(){ const sheet=sheetEl; let sy=null,startTf=0,drag=false,fromHandle=false,lastY=0,lastT=0,vy=0;
@@ -1204,12 +1230,13 @@
   function defaultList(){ return listById('fav')||LISTS[0]; }
   function isSaved(id){ return LISTS.some(L=>L.items.includes(id)); }
   function savedCount(){ return Object.keys(PLACEINFO).length; }
-  function placeMini(id){ const p=places[id]; if(p) return {id,name:p.name,type:p.type,area:p.area,lat:p.lat,lng:p.lng}; return PLACEINFO[id]; }
+  function placeMini(id){ const p=places[id]; if(p) return {id,kind:'place',name:p.name,type:p.type,area:p.area,lat:p.lat,lng:p.lng}; const ev=EVENTS[id]; if(ev) return eventMini(ev); return PLACEINFO[id]; }
+  function eventMini(ev){ return {id:ev.id,kind:'event',name:ev.title,title:ev.title,type:'Event',area:ev.area,venue:ev.venue,lat:ev.lat,lng:ev.lng,startISO:ev.start?ev.start.toISOString():null,free:!!ev.free,price:ev.price||'',url:ev.url||'',source:ev.source||''}; }
   function rememberPlace(id){ const m=placeMini(id); if(m) PLACEINFO[id]=m; }
-  function addToList(lid,pid){ const L=listById(lid); if(!L)return; rememberPlace(pid); if(!L.items.includes(pid)) L.items.unshift(pid); persistLists(); logInteraction(pid,'save'); if(!places[pid]) tasteLearn(PLACEINFO[pid], ACT_W.save); }
+  function addToList(lid,pid){ const L=listById(lid); if(!L)return; rememberPlace(pid); if(!L.items.includes(pid)) L.items.unshift(pid); persistLists(); logInteraction(pid,'save'); if(!places[pid]){ const mi=PLACEINFO[pid]; if(mi && mi.kind!=='event') tasteLearn(mi, ACT_W.save); } }
   function removeFromList(lid,pid){ const L=listById(lid); if(!L)return; L.items=L.items.filter(x=>x!==pid); if(!isSaved(pid)) delete PLACEINFO[pid]; persistLists(); }
   function quickSave(id){ rememberPlace(id); const L=defaultList(); if(!L.items.includes(id)) L.items.unshift(id); persistLists(); logInteraction(id,'save'); posLogged=true; afterSaveChange(id); }
-  function afterSaveChange(id){ const wasFiltered=(FILTER==='saved'||(typeof FILTER==='string'&&FILTER.indexOf('list:')===0)); syncSaveBtn(currentPlaceId); renderLists(); renderListChips(); updateProfile(); if(wasFiltered) render(); }
+  function afterSaveChange(id){ const wasFiltered=(FILTER==='saved'||FILTER==='events'||(typeof FILTER==='string'&&FILTER.indexOf('list:')===0)); syncSaveBtn(currentPlaceId); syncEventSaveBtn(); renderLists(); renderListChips(); updateProfile(); if(wasFiltered) render(); }
   function syncSaveBtn(id){ const b=$('s-save'); if(b) b.classList.toggle('saved', id?isSaved(id):false); }
 
   // one-tap save / manage
@@ -1220,7 +1247,7 @@
   let listSheetPid=null;
   function openListSheet(id){ listSheetPid=id; renderListSheet(); $('dropm').classList.remove('on'); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('newlistm').classList.remove('on'); $('scrim').classList.add('on'); $('listm').classList.add('on'); }
   function renderListSheet(){ const id=listSheetPid, p=placeMini(id); $('listm-title').textContent=`Add “${p?p.name:'this place'}” to…`;
-    $('listm-rows').innerHTML=LISTS.map(L=>{ const on=L.items.includes(id); return `<div class="lrow" data-list="${L.id}"><div class="lem" style="${coverStyle(L)}">${coverHTML(L)}</div><div style="flex:1;min-width:0;"><div class="ln">${L.name}</div><div class="lc">${L.items.length} place${L.items.length===1?'':'s'}</div></div><div class="check${on?' on':''}">${on?CHECK:''}</div></div>`; }).join('');
+    $('listm-rows').innerHTML=LISTS.map(L=>{ const on=L.items.includes(id); return `<div class="lrow" data-list="${L.id}"><div class="lem" style="${coverStyle(L)}">${coverHTML(L)}</div><div style="flex:1;min-width:0;"><div class="ln">${L.name}</div><div class="lc">${L.items.length} item${L.items.length===1?'':'s'}</div></div><div class="check${on?' on':''}">${on?CHECK:''}</div></div>`; }).join('');
   }
   $('listm-rows').addEventListener('click',e=>{ const r=e.target.closest('.lrow'); if(!r)return; const lid=r.dataset.list, id=listSheetPid, L=listById(lid); if(!L)return; if(L.items.includes(id)) removeFromList(lid,id); else addToList(lid,id); renderListSheet(); afterSaveChange(id); });
   $('listm-new').onclick=()=>openListForm({pid:listSheetPid, ret:'listsheet'});
@@ -1242,7 +1269,7 @@
   };
 
   // ---- Profile: your lists ----
-  function renderLists(){ const box=$('listcards'); if(!box) return; box.innerHTML=LISTS.map(L=>`<div class="listcard" data-list="${L.id}"><div class="cov" style="${coverStyle(L)}">${coverHTML(L)}</div><div style="flex:1;min-width:0;"><div class="lt">${L.name}</div><div class="ls">${L.items.length} place${L.items.length===1?'':'s'} · Private</div></div><div class="chev">›</div></div>`).join(''); }
+  function renderLists(){ const box=$('listcards'); if(!box) return; box.innerHTML=LISTS.map(L=>`<div class="listcard" data-list="${L.id}"><div class="cov" style="${coverStyle(L)}">${coverHTML(L)}</div><div style="flex:1;min-width:0;"><div class="lt">${L.name}</div><div class="ls">${L.items.length} item${L.items.length===1?'':'s'} · Private</div></div><div class="chev">›</div></div>`).join(''); }
   $('listcards').addEventListener('click',e=>{ const c=e.target.closest('.listcard'); if(c) openListDetail(c.dataset.list); });
   $('listnew').onclick=()=>openListForm({ret:'profile'});
 
@@ -1251,17 +1278,20 @@
   function openListDetail(id){ const L=listById(id); if(!L)return; detailListId=id; delArm=null;
     $('ld-emoji').style.cssText=coverStyle(L); $('ld-emoji').innerHTML=coverHTML(L); $('ld-title').textContent=L.name;
     const d=$('ld-desc'); d.textContent=L.desc||''; d.style.display=L.desc?'':'none';
-    $('ld-meta').textContent=`Private · ${L.items.length} place${L.items.length===1?'':'s'}`;
+    $('ld-meta').textContent=`Private · ${L.items.length} item${L.items.length===1?'':'s'}`;
     const del=$('ld-delete'); del.style.display=(id==='fav')?'none':''; del.textContent='Delete list'; del.classList.remove('arm');
     renderListDetailRows(); showView('v-listdetail');
   }
   function renderListDetailRows(){ const L=listById(detailListId); const box=$('ld-rows'); if(!L||!box)return;
-    if(!L.items.length){ box.innerHTML='<div class="sempty" style="padding:18px;">No places yet. Save a place, then add it to this list.</div>'; return; }
-    box.innerHTML=L.items.map(pid=>{ const live=places[pid]; const p=live||PLACEINFO[pid]; if(!p) return ''; const g=live?gx(live.g[0]):'linear-gradient(135deg,#2f3a52,#1b2230)'; const rate=(live&&live.rated)?`<span class="star">★</span>${live.stars} · `:''; return `<div class="placerow" data-id="${pid}"><div class="th" style="background:${g}"></div><div style="flex:1;min-width:0;"><div class="pn">${p.name}</div><div class="pr">${rate}${p.area||p.type||''}</div></div><div class="rmx" data-rm="${pid}">${XSVG}</div></div>`; }).join('');
+    if(!L.items.length){ box.innerHTML='<div class="sempty" style="padding:18px;">Nothing saved yet. Save a place or event, then add it here.</div>'; return; }
+    box.innerHTML=L.items.map(pid=>{ const live=places[pid]; const info=live||PLACEINFO[pid]; if(!info) return '';
+      if(info.kind==='event'){ const ev=EVENTS[pid]; const start=(ev&&ev.start)||(info.startISO?new Date(info.startISO):null); const when=start?(dayShort(start)+' · '+fmtTime(start)):''; const g=(ev&&ev.g)?gx(ev.g):'linear-gradient(135deg,#d4a247,#a8761f)'; const sub=[when,(info.venue||info.area||'')].filter(Boolean).join(' · '); return `<div class="placerow" data-id="${pid}"><div class="th" style="background:${g}"></div><div style="flex:1;min-width:0;"><div class="pn">${info.title||info.name}</div><div class="pr">${sub}</div></div><div class="rmx" data-rm="${pid}">${XSVG}</div></div>`; }
+      const g=live?gx(live.g[0]):'linear-gradient(135deg,#2f3a52,#1b2230)'; const rate=(live&&live.rated)?`<span class="star">★</span>${live.stars} · `:''; return `<div class="placerow" data-id="${pid}"><div class="th" style="background:${g}"></div><div style="flex:1;min-width:0;"><div class="pn">${info.name}</div><div class="pr">${rate}${info.area||info.type||''}</div></div><div class="rmx" data-rm="${pid}">${XSVG}</div></div>`;
+    }).join('');
   }
   $('ld-back').onclick=()=>{ showView('v-you'); renderLists(); updateProfile(); };
   $('ld-edit').onclick=()=>openListForm({edit:detailListId, ret:'detail'});
-  $('ld-rows').addEventListener('click',e=>{ const rm=e.target.closest('[data-rm]'); if(rm){ e.stopPropagation(); removeFromList(detailListId,rm.dataset.rm); openListDetail(detailListId); renderListChips(); return; } const row=e.target.closest('.placerow'); if(!row)return; const pid=row.dataset.id, info=places[pid]||PLACEINFO[pid]; document.querySelector('.nav button[data-v="map"]').click(); if(mlmap&&info) mlmap.easeTo({center:[info.lng,info.lat],zoom:16}); if(places[pid]) openPlace(pid); });
+  $('ld-rows').addEventListener('click',e=>{ const rm=e.target.closest('[data-rm]'); if(rm){ e.stopPropagation(); removeFromList(detailListId,rm.dataset.rm); openListDetail(detailListId); renderListChips(); return; } const row=e.target.closest('.placerow'); if(!row)return; const pid=row.dataset.id, info=places[pid]||PLACEINFO[pid]; document.querySelector('.nav button[data-v="map"]').click(); if(mlmap&&info) mlmap.easeTo({center:[info.lng,info.lat],zoom:16}); if(info&&info.kind==='event') openEvent(pid); else if(places[pid]) openPlace(pid); });
   $('ld-delete').onclick=()=>{ if(detailListId==='fav')return; const b=$('ld-delete'); if(delArm!==detailListId){ delArm=detailListId; b.textContent='Tap again to delete'; b.classList.add('arm'); clearTimeout(delT); delT=setTimeout(()=>{ delArm=null; b.textContent='Delete list'; b.classList.remove('arm'); },3000); return; } LISTS=LISTS.filter(L=>L.id!==detailListId); Object.keys(PLACEINFO).forEach(pid=>{ if(!isSaved(pid)) delete PLACEINFO[pid]; }); persistLists(); clearTimeout(delT); delArm=null; renderLists(); renderListChips(); updateProfile(); showView('v-you'); toast('List deleted'); };
 
   // ---- Map "Saved" + per-list filter chips ----
@@ -1317,7 +1347,7 @@
     showDirChooser();
   }
   function openEventDir(mode){
-    const ev=EVENTS[curEventId]; if(!ev) return;
+    const ev=curEvent; if(!ev) return;
     dirObj=ev; dirMode=mode||'walking';
     if(dirPref!=='ask'){ doDirections(dirPref); return; }
     showDirChooser();
@@ -1371,12 +1401,13 @@
       const price=(r.price==null?'':r.price).toString().trim();
       const free=/^(free|no cover|\$?0(\.00)?)$/i.test(price);
       const g=(free?EV_FREE_G:EV_TIX_G); const gg=g[Math.floor(sd(id,'eg')*g.length)%g.length];
+      const intr=revNames.filter(r=>sd(id,'int'+r[2])>0.5);
       let cats=r.categories; if(Array.isArray(cats)) cats=cats.join(', '); cats=(cats||'').toString().replace(/[{}"]/g,'').replace(/,(?=\S)/g,', ').trim();
       EVENTS[id]={ id, title:(r.title||'Event').toString(), source:(r.source||'').toString(), url:(r.url||'').toString(),
         venue:(r.venue||'').toString(), area:(r.area||'').toString(), lat, lng, price, free,
         age:(r.age_restriction||'').toString(), cats, img:(r.image_url||'').toString(),
         start, end, startMs:start?start.getTime():0, checked:r.last_checked_at?new Date(r.last_checked_at):null,
-        g:gg, dot: free?'#ff8a5b':'#e7c05a' };
+        g:gg, dot: free?'#ff8a5b':'#e7c05a', interested:intr };
     });
   }
   let evpLast='';
@@ -1390,13 +1421,37 @@
       +`&lat=gte.${s}&lat=lte.${n}&lng=gte.${w}&lng=lte.${e}&start_time=gte.${encodeURIComponent(since)}&order=start_time.asc&limit=200`;
     fetch(url,{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}})
       .then(r=>r.ok?r.json():null)
-      .then(rows=>{ if(Array.isArray(rows)){ buildEvents(rows); renderListChips(); if(FILTER==='events') render(); } })
+      .then(rows=>{ if(Array.isArray(rows)){ buildEvents(rows); renderListChips(); if(FILTER==='events') render(); if(typeof discoverFeed==='function') discoverFeed(curSeg); } })
       .catch(()=>{});
   }
   function applyEventEta(id){ const ev=EVENTS[id]; if(curEventId!==id||!ev||!ev.etaReal)return; const e=ev.etaReal; if(e.walk)$('e-walk').textContent=e.walk+' min'; if(e.drive){ $('e-drive').textContent=e.drive+' min'; $('e-transit').textContent=Math.max(2,Math.round(e.drive*2.1))+' min'; } }
   function fetchEventEta(ev){ if(ev.etaReal){ applyEventEta(ev.id); return; } Promise.all([osrmMin('routed-foot',ev),osrmMin('routed-car',ev)]).then(([w,d])=>{ if(w||d){ ev.etaReal={walk:w,drive:d}; applyEventEta(ev.id); } }); }
+  function eventFromMini(mi){ const start=mi.startISO?new Date(mi.startISO):null; const free=!!mi.free; const g=(free?EV_FREE_G:EV_TIX_G); const gg=g[Math.floor(sd(mi.id,'eg')*g.length)%g.length]; const intr=revNames.filter(r=>sd(mi.id,'int'+r[2])>0.5); return { id:mi.id,title:mi.title||mi.name,source:mi.source||'',url:mi.url||'',venue:mi.venue||'',area:mi.area||'',lat:mi.lat,lng:mi.lng,price:mi.price||'',free,age:'',cats:'',img:'',start,end:null,startMs:start?start.getTime():0,checked:null,g:gg,dot:free?'#ff8a5b':'#e7c05a',interested:intr }; }
+  function eventObj(id){ return EVENTS[id] || ((PLACEINFO[id]&&PLACEINFO[id].kind==='event')? eventFromMini(PLACEINFO[id]) : null); }
+  function eventsToShow(){ const now=Date.now(), keep=ev=>ev&&ev.start&&ev.startMs>=now-3*3600*1000;
+    if(FILTER==='events') return Object.values(EVENTS).filter(keep);
+    if(FILTER==='saved') return Object.values(PLACEINFO).filter(mi=>mi&&mi.kind==='event'&&isSaved(mi.id)).map(mi=>eventObj(mi.id)).filter(keep);
+    if(typeof FILTER==='string'&&FILTER.indexOf('list:')===0){ const L=listById(FILTER.slice(5)); return L? L.items.map(eventObj).filter(keep):[]; }
+    return [];
+  }
+  function eventMarkersHTML(evList,z,pLabels){ if(!evList||!evList.length) return '';
+    const W=map.clientWidth||window.innerWidth, H=map.clientHeight||window.innerHeight, M=90; const onScr=(x,y)=>x>=-M&&x<=W+M&&y>=-M&&y<=H+M;
+    const eitems=evList.map(ev=>{ const s=mlmap.project([ev.lng,ev.lat]); return {ev,sx:s.x,sy:s.y}; }).filter(it=>onScr(it.sx,it.sy)).sort((a,b)=>a.ev.startMs-b.ev.startMs);
+    const eMax = z<12?6 : z<14?12 : z<16?18 : 26; const placed=[]; let n=0, html='';
+    for(const it of eitems){ if(n>=eMax) break; const ev=it.ev, sx=it.sx, sy=it.sy, cx=sx, cy=sy-14;
+      if(placed.some(q=>Math.hypot(q.x-cx,q.y-cy)<46)) continue; placed.push({x:cx,y:cy}); n++;
+      let lbl=''; const short=ev.title.length>15?ev.title.slice(0,14)+'…':ev.title; const txt=(ev.start?dayShort(ev.start)+' '+fmtTimeShort(ev.start)+' · ':'')+short;
+      const w=18+txt.length*5.2, r={x:sx-w/2,y:sy+2,w,h:15};
+      if(!pLabels.some(q=>!(r.x+r.w<q.x||r.x>q.x+q.w||r.y+r.h<q.y||r.y>q.y+q.h))){ pLabels.push(r); lbl=`<div class="lbl">${txt}</div>`; }
+      html+=`<div class="mk pin calm${ev.id===curEventId?' selected':''}" data-ev="${ev.id}" data-lng="${ev.lng}" data-lat="${ev.lat}" style="left:${sx}px;top:${sy}px;color:${ev.dot}"><div class="body" style="background:${gx(ev.g)}">${EV_TICKET}</div>${lbl}</div>`;
+    }
+    return html;
+  }
+  function syncEventSaveBtn(){ const b=$('e-save'); if(b) b.classList.toggle('saved', curEventId?isSaved(curEventId):false); }
+  function onSaveTapEvent(){ if(!curEvent) return; openListSheet(curEvent.id); }
   function openEvent(id){
-    const ev=EVENTS[id]; if(!ev) return; curEventId=id; selId=null; closeMenus(); render();
+    let ev=EVENTS[id]; if(!ev){ const mi=PLACEINFO[id]; if(mi&&mi.kind==='event') ev=eventFromMini(mi); } if(!ev) return;
+    curEventId=id; curEvent=ev; selId=null; closeMenus(); render(); syncEventSaveBtn();
     $('e-name').textContent=ev.title;
     $('e-venue').textContent=[ev.venue,ev.area].filter(Boolean).join(' · ')||'Venue TBA';
     $('e-when').textContent = ev.start? (dayLong(ev.start)+' · '+fmtTime(ev.start)) : 'Date TBA';
@@ -1405,19 +1460,66 @@
     $('e-photos').innerHTML = ev.img?`<div class="sp" style="background-image:url('${ev.img}')"></div>`:`<div class="sp" style="background:${gx(ev.g)};width:100%;display:flex;align-items:flex-end;"><span class="pill">${ev.free?'Free entry':'Ticketed'}</span></div>`;
     const meta=[ ev.free?'Free entry':(ev.price||'Ticketed'), ev.age, ev.cats ].filter(Boolean).join('   ·   ');
     $('e-blurb').textContent = meta || 'Event details to come.';
+    if(ev.interested&&ev.interested.length){ $('e-fhere-sec').style.display=''; $('e-fhere').innerHTML=`<div class="fhere"><div class="stack">${ev.interested.map(r=>`<div class="mm" style="background:${r[1]}">${r[0]}</div>`).join('')}</div><div class="tt"><b>${ev.interested.map(r=>r[2]).join(', ')}</b> <span>${ev.interested.length>1?'are':'is'} interested</span></div></div>`; } else $('e-fhere-sec').style.display='none';
     $('e-tix').style.display = ev.url? '' : 'none';
     if(ev.source||ev.checked){ $('e-src-sec').style.display='';
       const srcName=ev.source? ev.source.charAt(0).toUpperCase()+ev.source.slice(1) : 'source';
       $('e-src').innerHTML=`<span class="dotg"></span><span>Listed on <b>${srcName}</b>${ev.checked?' · checked '+agoWord(ev.checked):''}</span><span class="arr">›</span>`;
     } else $('e-src-sec').style.display='none';
     $('esheet').scrollTop=0; fetchEventEta(ev);
-    $('esheet').classList.add('on'); $('scrim').classList.add('on');
+    openEsheet('peek');
   }
-  function closeEvent(){ $('esheet').classList.remove('on'); $('scrim').classList.remove('on'); if(curEventId){ curEventId=null; render(); } }
-  $('esheetHandle').onclick=closeEvent;
-  $('e-tix').onclick=()=>{ const ev=EVENTS[curEventId]; if(ev&&ev.url) openExternal(ev.url); };
-  $('e-src').onclick=()=>{ const ev=EVENTS[curEventId]; if(ev&&ev.url) openExternal(ev.url); };
+  function closeEvent(){ eSetState('closed', true); curEvent=null; if(curEventId){ curEventId=null; render(); } }
+  $('e-save').onclick=onSaveTapEvent;
+  $('e-tix').onclick=()=>{ if(curEvent&&curEvent.url) openExternal(curEvent.url); };
+  $('e-src').onclick=()=>{ if(curEvent&&curEvent.url) openExternal(curEvent.url); };
   $('e-dir').onclick=()=>openEventDir('walking');
+  $('e-etas').addEventListener('click',e=>{ const t=e.target.closest('.eta'); if(!t)return; openEventDir(t.dataset.mode); });
+  // ---- event sheet: same peek/full/drag behavior as the place sheet ----
+  const esheetEl=$('esheet');
+  let eState='closed';
+  function eH(){ return esheetEl.offsetHeight || Math.round(window.innerHeight*0.9); }
+  function ePeekY(){ const h=eH(); const vis=Math.min(h, Math.max(340, window.innerHeight*0.52)); return Math.max(0, Math.round(h - vis)); }
+  function eSetState(s, animate){
+    esheetEl.style.transition = (animate===false)?'none':'transform .34s cubic-bezier(.2,.8,.2,1)';
+    if(s==='closed'){
+      eState='closed'; esheetEl.style.transform='translateY(100%)'; $('scrim').classList.remove('on');
+      if(animate===false){ esheetEl.classList.remove('on'); } else { setTimeout(()=>{ if(eState==='closed') esheetEl.classList.remove('on'); },340); }
+      return;
+    }
+    eState=s; esheetEl.classList.add('on');
+    $('scrim').classList.toggle('on', s==='full');   // peek leaves the map visible & tappable; full dims it
+    esheetEl.style.transform = (s==='full') ? 'translateY(0px)' : ('translateY('+ePeekY()+'px)');
+  }
+  function openEsheet(state){
+    if(sheetState!=='closed') setSheetState('closed', true);
+    $('dropm').classList.remove('on'); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('listm').classList.remove('on'); $('newlistm').classList.remove('on');
+    if(eState==='closed'){ esheetEl.style.transition='none'; esheetEl.style.transform='translateY(100%)'; esheetEl.classList.add('on'); void esheetEl.offsetHeight; }
+    requestAnimationFrame(()=>eSetState(state||'peek', true));
+  }
+  (function(){ const sh=esheetEl; let sy=null,startTf=0,drag=false,fromHandle=false,lastY=0,lastT=0,vy=0;
+    function curY(){ const m=/translateY\(([-\d.]+)px\)/.exec(sh.style.transform||''); if(m) return parseFloat(m[1]); return eState==='full'?0:ePeekY(); }
+    function down(e){ sy=e.clientY; lastY=e.clientY; lastT=Date.now(); vy=0; drag=false; fromHandle=!!e.target.closest('#esheetHandle'); startTf=curY(); sh.style.transition='none'; }
+    function move(e){ if(sy===null)return; const y=e.clientY, dy=y-sy, now=Date.now(); if(now>lastT){ vy=(y-lastY)/(now-lastT); } lastY=y; lastT=now;
+      if(!drag){
+        if(fromHandle){ if(Math.abs(dy)>2) drag=true; else return; }
+        else if(dy>6 && sh.scrollTop<=0){ drag=true; }
+        else if(dy<-6 && eState==='peek'){ drag=true; }
+        else if(dy<0 || sh.scrollTop>0){ sy=null; sh.style.transition=''; return; }
+        else return;
+      }
+      if(e.cancelable)e.preventDefault();
+      let ny=startTf+dy; if(ny<0) ny=0; sh.style.transform='translateY('+ny+'px)'; }
+    function up(e){ if(sy===null){ sh.style.transition=''; return; } sh.style.transition='';
+      if(!drag){ sy=null; return; }
+      const y=curY(), h=eH(), pk=ePeekY(); let target;
+      if(vy>0.55){ target=(eState==='full' && y < pk + (h-pk)*0.4) ? 'peek' : 'closed'; }
+      else if(vy<-0.55){ target='full'; }
+      else { if(y > pk + (h-pk)*0.4) target='closed'; else if(y > pk*0.5) target='peek'; else target='full'; }
+      eSetState(target, true);
+      sy=null; drag=false; fromHandle=false; vy=0; }
+    sh.addEventListener('pointerdown',down); sh.addEventListener('pointermove',move,{passive:false}); sh.addEventListener('pointerup',up); sh.addEventListener('pointercancel',up);
+  })();
   function locateUser(opts){ opts=opts||{};
     if(!navigator.geolocation){ if(opts.announce) toast('Location not supported on this device'); return; }
     navigator.geolocation.getCurrentPosition(

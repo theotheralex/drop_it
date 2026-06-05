@@ -327,6 +327,14 @@
   }
   body.m-light .eta, body.m-light .ycard, body.m-light .sec, body.m-light .modal { box-shadow:0 1px 2px rgba(0,0,0,.05); }
   body.m-light .chip { background:rgba(255,255,255,0.92); }
+  /* events layer */
+  .ewhen { color:var(--gold); font-size:14.5px; font-weight:700; margin-top:8px; letter-spacing:.2px; }
+  .esrc { display:flex; align-items:center; gap:8px; color:var(--dim); font-size:12px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:11px 12px; width:100%; text-align:left; font-family:inherit; cursor:pointer; }
+  .esrc .dotg { width:7px; height:7px; border-radius:50%; background:var(--green); flex:0 0 auto; box-shadow:0 0 7px rgba(81,176,103,.6); }
+  .esrc b { color:var(--text); font-weight:600; }
+  .esrc .arr { margin-left:auto; color:var(--mute); }
+  .chip-ev { color:var(--gold); border-color:rgba(212,162,71,.4); background:rgba(212,162,71,.12); }
+  .chip-ev.on { background:var(--gold); color:#1a1206; border-color:var(--gold); }
   body.m-light .searchpill { background:rgba(255,255,255,0.96); box-shadow:0 4px 14px rgba(0,0,0,.12); }
   body.m-light .searchresults { background:rgba(255,255,255,0.98); box-shadow:0 14px 34px rgba(0,0,0,.2); }
   body.m-light .sresult:active { background:rgba(0,0,0,.05); }
@@ -539,6 +547,20 @@
       <div class="sec" id="s-photos-sec"><div class="sec-h"><div class="sec-t">Photos</div><div class="sec-l">See all</div></div><div class="pgrid" id="s-photos"></div></div>
       <div class="sec"><div class="sec-h"><div class="sec-t">Drop It rating</div></div><div class="rbig"><div><div class="rnum" id="s-rnum"></div><div class="rsub">★★★★★</div><div class="rcnt" id="s-rcnt"></div></div><div class="rbars" id="s-rbars"></div></div><div class="ratecta" id="s-ratecta"><div><div class="nm">Rate this spot <span class="empty">☆☆☆☆☆</span></div><div class="ds">Add your stars and a quick note</div></div><div style="color:var(--mute)">›</div></div></div>
       <div class="sec rev"><div class="sec-h"><div class="sec-t">Recent reviews</div></div><div id="s-reviews"></div></div>
+    </div>
+  </div>
+
+  <div class="sheet" id="esheet">
+    <div class="sheet-handle" id="esheetHandle"><div class="grab2"></div></div>
+    <div class="sphotos" id="e-photos"></div>
+    <div class="sbody">
+      <h2 id="e-name"></h2>
+      <div class="scat" id="e-venue"></div>
+      <div class="ewhen" id="e-when"></div>
+      <div class="etas" id="e-etas"><div class="eta"><div class="t" id="e-walk">–</div><div class="m">walk</div></div><div class="eta"><div class="t" id="e-drive">–</div><div class="m">drive</div></div><div class="eta"><div class="t" id="e-transit">–</div><div class="m">transit</div></div></div>
+      <div class="acts"><button class="primary" id="e-tix"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/><path d="M13 7v10" stroke-dasharray="1.5 2.5"/></svg>Get tickets</button><button class="ghost" id="e-dir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 11l19-9-9 19-2-8z"/></svg>Directions</button></div>
+      <div class="sec"><div class="blurb" id="e-blurb"></div></div>
+      <div class="sec" id="e-src-sec"><button class="esrc" id="e-src"></button></div>
     </div>
   </div>
 
@@ -756,6 +778,7 @@
   const STV=[ {x:wx(-122.4268),n:'Dolores St'},{x:wx(-122.4243),n:'Guerrero St'},{x:wx(-122.4214),n:'Valencia St',m:1},{x:wx(-122.4185),n:'Mission St',m:1},{x:wx(-122.4160),n:'S Van Ness'},{x:wx(-122.4120),n:'Folsom St'} ];
   const STH=[ {y:wy(37.7649),n:'16th St'},{y:wy(37.7617),n:'18th St'},{y:wy(37.7592),n:'20th St'},{y:wy(37.7555),n:'22nd St'},{y:wy(37.7522),n:'24th St'},{y:wy(37.7485),n:'Cesar Chavez'} ];
   let FILTER='all', SEARCH='', userDrops=[], curSeg='now', currentPlaceId=null, selId=null, openedAt=0, posLogged=false;
+  const EVENTS={}; let curEventId=null;
   const map=$('map'), markers=$('markers');
   const CR=48, DOTS_Z=13.2, LABELS_Z=14.2, CLUSTER_Z=14.9, START_Z=14.4;
   let mlmap=null, mlReady=false;
@@ -791,6 +814,19 @@
       if(!pLabels.some(q=>!(r.x+r.w<q.x||r.x>q.x+q.w||r.y+r.h<q.y||r.y>q.y+q.h))){ pLabels.push(r); lbl=`<div class="lmlabel">${l.name}</div>`; }
       html+=`<div class="mk lm" data-lng="${l.lng}" data-lat="${l.lat}" style="left:${sx}px;top:${sy}px"><div class="lmchip" style="color:${LM_C[l.t]||'#9aa3b2'}">${l.icon}</div>${lbl}</div>`;
     }
+    if(FILTER==='events'){
+      const now=Date.now();
+      const eAll=Object.values(EVENTS).filter(ev=>ev.start && ev.startMs>=now-3*3600*1000);
+      const eitems=eAll.map(ev=>{ const s=mlmap.project([ev.lng,ev.lat]); return {ev,sx:s.x,sy:s.y}; }).filter(it=>onScr(it.sx,it.sy)).sort((a,b)=>a.ev.startMs-b.ev.startMs);
+      const eMax = z<12?6 : z<14?12 : z<16?18 : 26; const placedEv=[]; let nEv=0;
+      for(const it of eitems){ if(nEv>=eMax) break; const ev=it.ev, sx=it.sx, sy=it.sy, cx=sx, cy=sy-14;
+        if(placedEv.some(q=>Math.hypot(q.x-cx,q.y-cy)<46)) continue; placedEv.push({x:cx,y:cy}); nEv++;
+        let lbl=''; const short=ev.title.length>15?ev.title.slice(0,14)+'…':ev.title; const txt=(ev.start?dayShort(ev.start)+' '+fmtTimeShort(ev.start)+' · ':'')+short;
+        const w=18+txt.length*5.2, r={x:sx-w/2,y:sy+2,w,h:15};
+        if(!pLabels.some(q=>!(r.x+r.w<q.x||r.x>q.x+q.w||r.y+r.h<q.y||r.y>q.y+q.h))){ pLabels.push(r); lbl=`<div class="lbl">${txt}</div>`; }
+        html+=`<div class="mk pin calm${ev.id===curEventId?' selected':''}" data-ev="${ev.id}" data-lng="${ev.lng}" data-lat="${ev.lat}" style="left:${sx}px;top:${sy}px;color:${ev.dot}"><div class="body" style="background:${gx(ev.g)}">${EV_TICKET}</div>${lbl}</div>`;
+      }
+    } else {
     // --- Layer 2: food/drink density budget. Held back when zoomed out so landmarks lead. ---
     const items=visible().map(p=>{ const s=mlmap.project([p.lng,p.lat]); return {p,sx:s.x,sy:s.y}; }).filter(it=>onScr(it.sx,it.sy));
     const tasteOf=tasteScorer();
@@ -815,6 +851,7 @@
         placedDots.push({x:sx,y:sy}); nDot++; html+=dotMK(p,sx,sy);
       }
     }
+    }
     markers.innerHTML=html;
     markers.classList.toggle('has-selection', !!selId);
   }
@@ -826,7 +863,8 @@
     const nd=markers.children;
     for(let i=0;i<nd.length;i++){ const el=nd[i]; if(el.classList.contains('fglow')||el.classList.contains('here')||el.classList.contains('lm')) continue; const x=parseFloat(el.style.left)||0; let y=parseFloat(el.style.top)||0; if(el.classList.contains('pin')) y-=14; const d=Math.hypot(x-px,y-py); if(d<bestD){ bestD=d; best=el; } }
     if(!best || bestD>30) return;
-    if(best.dataset.id) openPlace(best.dataset.id);
+    if(best.dataset.ev) openEvent(best.dataset.ev);
+    else if(best.dataset.id) openPlace(best.dataset.id);
     else if(best.classList.contains('clu')){ mlmap.easeTo({center:[parseFloat(best.dataset.lng),parseFloat(best.dataset.lat)], zoom:Math.min(18,mlmap.getZoom()+1.4)}); }
     else if(best.dataset.friend) openFriend(best.dataset.friend);
   }
@@ -856,7 +894,7 @@
     mlmap=new maplibregl.Map({ container:'mlmap', style:STYLE_DARK, center:[HERE.lng,HERE.lat], zoom:START_Z, attributionControl:false, dragRotate:false, pitchWithRotate:false });
     mlmap.addControl(new maplibregl.AttributionControl({compact:true, customAttribution:'Place data © OpenStreetMap contributors'}),'bottom-left');
     if(mlmap.touchZoomRotate && mlmap.touchZoomRotate.disableRotation) mlmap.touchZoomRotate.disableRotation();
-    mlmap.on('load',()=>{ mlReady=true; if(MAPMODE==='dark') tintParks(); render(); fetchViewport(); fetchLandmarks(); });
+    mlmap.on('load',()=>{ mlReady=true; if(MAPMODE==='dark') tintParks(); render(); fetchViewport(); fetchLandmarks(); fetchEvents(); });
     mlmap.on('click', mapClick);
     mlmap.on('move',reposition); mlmap.on('zoom',scheduleRender); mlmap.on('moveend',()=>{ render(); scheduleViewport(); }); mlmap.on('resize',render);
   }
@@ -961,12 +999,12 @@
     $('scrim').classList.toggle('on', s==='full');   // peek leaves the map visible & tappable; full dims it
     sheetEl.style.transform = (s==='full') ? 'translateY(0px)' : ('translateY('+peekY()+'px)');
   }
-  function openSheet(state){ $('dropm').classList.remove('on'); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('listm').classList.remove('on'); $('newlistm').classList.remove('on');
+  function openSheet(state){ $('dropm').classList.remove('on'); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('listm').classList.remove('on'); $('newlistm').classList.remove('on'); $('esheet').classList.remove('on');
     if(sheetState==='closed'){ sheetEl.style.transition='none'; sheetEl.style.transform='translateY(100%)'; sheetEl.classList.add('on'); void sheetEl.offsetHeight; }
     requestAnimationFrame(()=>setSheetState(state||'peek', true));
   }
   function openDrop(){ if(sheetState!=='closed') setSheetState('closed', true); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('scrim').classList.add('on'); $('dropm').classList.add('on'); }
-  function closeMenus(){ if(sheetState!=='closed') setSheetState('closed', true); $('dropm').classList.remove('on'); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('listm').classList.remove('on'); $('newlistm').classList.remove('on'); }
+  function closeMenus(){ if(sheetState!=='closed') setSheetState('closed', true); $('dropm').classList.remove('on'); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('listm').classList.remove('on'); $('newlistm').classList.remove('on'); $('esheet').classList.remove('on'); }
   function closeAll(){ closeMenus(); $('scrim').classList.remove('on'); if(selId){ selId=null; render(); } }
 
   (function(){ const sheet=sheetEl; let sy=null,startTf=0,drag=false,fromHandle=false,lastY=0,lastT=0,vy=0;
@@ -1168,14 +1206,14 @@
   function savedCount(){ return Object.keys(PLACEINFO).length; }
   function placeMini(id){ const p=places[id]; if(p) return {id,name:p.name,type:p.type,area:p.area,lat:p.lat,lng:p.lng}; return PLACEINFO[id]; }
   function rememberPlace(id){ const m=placeMini(id); if(m) PLACEINFO[id]=m; }
-  function addToList(lid,pid){ const L=listById(lid); if(!L)return; rememberPlace(pid); if(!L.items.includes(pid)) L.items.unshift(pid); persistLists(); tasteLearn(places[pid]||PLACEINFO[pid], ACT_W.save); }
+  function addToList(lid,pid){ const L=listById(lid); if(!L)return; rememberPlace(pid); if(!L.items.includes(pid)) L.items.unshift(pid); persistLists(); logInteraction(pid,'save'); if(!places[pid]) tasteLearn(PLACEINFO[pid], ACT_W.save); }
   function removeFromList(lid,pid){ const L=listById(lid); if(!L)return; L.items=L.items.filter(x=>x!==pid); if(!isSaved(pid)) delete PLACEINFO[pid]; persistLists(); }
   function quickSave(id){ rememberPlace(id); const L=defaultList(); if(!L.items.includes(id)) L.items.unshift(id); persistLists(); logInteraction(id,'save'); posLogged=true; afterSaveChange(id); }
   function afterSaveChange(id){ const wasFiltered=(FILTER==='saved'||(typeof FILTER==='string'&&FILTER.indexOf('list:')===0)); syncSaveBtn(currentPlaceId); renderLists(); renderListChips(); updateProfile(); if(wasFiltered) render(); }
   function syncSaveBtn(id){ const b=$('s-save'); if(b) b.classList.toggle('saved', id?isSaved(id):false); }
 
   // one-tap save / manage
-  function onSaveTap(){ const id=currentPlaceId; if(!id||!places[id]) return; if(isSaved(id)){ openListSheet(id); } else { quickSave(id); saveToast(id); } }
+  function onSaveTap(){ const id=currentPlaceId; if(!id||!places[id]) return; openListSheet(id); }
   function saveToast(id){ const t=$('toast'); t.innerHTML=`Saved to ${defaultList().name} · <span id="toastadd" style="color:var(--coral);font-weight:700;">Add to list</span>`; t.classList.add('on'); clearTimeout(tT); tT=setTimeout(()=>t.classList.remove('on'),3800); const a=$('toastadd'); if(a) a.onclick=()=>{ t.classList.remove('on'); openListSheet(id); }; }
 
   // ---- Add-to-list sheet ----
@@ -1232,6 +1270,9 @@
     if(typeof FILTER==='string' && FILTER.indexOf('list:')===0){ const L=listById(FILTER.slice(5)); if(!L||!L.items.length) FILTER='all'; }
     if(savedCount()>0){ const s=document.createElement('div'); s.className='chip'; s.dataset.f='saved'; s.dataset.dyn='1'; s.innerHTML='♥ Saved'; c.appendChild(s); }
     LISTS.forEach(L=>{ if(!L.items.length||L.id==='fav') return; const el=document.createElement('div'); el.className='chip'; el.dataset.f='list:'+L.id; el.dataset.dyn='1'; el.textContent=L.name; c.appendChild(el); });
+    const evUp=Object.values(EVENTS).some(ev=>ev.start && ev.startMs>=Date.now()-3*3600*1000);
+    if(FILTER==='events' && !evUp) FILTER='all';
+    if(evUp){ const el=document.createElement('div'); el.className='chip chip-ev'; el.dataset.f='events'; el.dataset.dyn='1'; el.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/></svg>Events'; c.appendChild(el); }
     c.querySelectorAll('.chip').forEach(ch=>ch.classList.toggle('on', ch.dataset.f===FILTER));
   }
 
@@ -1257,12 +1298,9 @@
   function setDirPref(v){ dirPref=v; try{ localStorage.setItem('dropit_dirpref',v); }catch(e){} renderDirPref(); }
   document.querySelectorAll('#dirprefopts .opt').forEach(o=>o.onclick=()=>setDirPref(o.dataset.pref));
   $('dirremember').onclick=function(){ this.classList.toggle('on'); };
-  function doDirections(provider){ const p=places[dirPlaceId]; if(p) openExternal(dirUrl(provider,p,dirMode)); }
-  function openDirChooser(mode){
-    if(!currentPlaceId||!places[currentPlaceId]) return;
-    dirPlaceId=currentPlaceId; dirMode=mode||'walking';
-    logInteraction(dirPlaceId,'directions'); posLogged=true;
-    if(dirPref!=='ask'){ doDirections(dirPref); return; }   // a default is set → skip the chooser
+  let dirObj=null;
+  function doDirections(provider){ if(dirObj) openExternal(dirUrl(provider,dirObj,dirMode)); }
+  function showDirChooser(){
     const opts=[];
     if(IS_IOS) opts.push(['apple','Apple Maps','#1a8f4c',DIR_PIN]);
     opts.push(['google','Google Maps','#4a8fff',DIR_PIN]);
@@ -1270,6 +1308,19 @@
     $('diropts').innerHTML=opts.map(o=>`<div class="diropt" data-prov="${o[0]}"><div class="dico" style="background:${o[2]}">${o[3]}</div>${o[1]}<div class="arr">›</div></div>`).join('');
     $('dirremember').classList.remove('on');
     closeMenus(); $('scrim').classList.add('on'); $('dirm').classList.add('on');
+  }
+  function openDirChooser(mode){
+    if(!currentPlaceId||!places[currentPlaceId]) return;
+    dirPlaceId=currentPlaceId; dirObj=places[currentPlaceId]; dirMode=mode||'walking';
+    logInteraction(dirPlaceId,'directions'); posLogged=true;
+    if(dirPref!=='ask'){ doDirections(dirPref); return; }   // a default is set → skip the chooser
+    showDirChooser();
+  }
+  function openEventDir(mode){
+    const ev=EVENTS[curEventId]; if(!ev) return;
+    dirObj=ev; dirMode=mode||'walking';
+    if(dirPref!=='ask'){ doDirections(dirPref); return; }
+    showDirChooser();
   }
   $('diropts').addEventListener('click',e=>{ const o=e.target.closest('.diropt'); if(!o)return; const prov=o.dataset.prov; if($('dirremember').classList.contains('on')) setDirPref(prov); closeAll(); doDirections(prov); });
   let vpTimer=null, vpLast='';
@@ -1298,7 +1349,75 @@
       .then(rows=>{ if(Array.isArray(rows)&&rows.length){ LMK=rows.map(l=>({name:l.name,lat:l.lat,lng:l.lng,t:l.type,pop:l.pop||0,icon:LM_ICON[l.type]||LM_BLDG})); render(); } })
       .catch(()=>{});
   }
-  function scheduleViewport(){ clearTimeout(vpTimer); vpTimer=setTimeout(()=>{ fetchViewport(); fetchLandmarks(); },450); }
+  function scheduleViewport(){ clearTimeout(vpTimer); vpTimer=setTimeout(()=>{ fetchViewport(); fetchLandmarks(); fetchEvents(); },450); }
+
+  // ================= Events (live layer; reads the `events` table) =================
+  const EV_TICKET='<svg viewBox="0 0 24 24" fill="#fff"><path d="M4 7.5C4 6.7 4.7 6 5.5 6h13c.8 0 1.5.7 1.5 1.5v2a2 2 0 0 0 0 4v2c0 .8-.7 1.5-1.5 1.5h-13C4.7 18 4 17.3 4 16.5v-2a2 2 0 0 0 0-4v-3z"/></svg>';
+  function fmtTime(d){ let h=d.getHours(); const m=d.getMinutes(); const ap=h<12?'AM':'PM'; h=h%12||12; return m?`${h}:${String(m).padStart(2,'0')} ${ap}`:`${h} ${ap}`; }
+  function fmtTimeShort(d){ let h=d.getHours(); const m=d.getMinutes(); const ap=h<12?'a':'p'; h=h%12||12; return m?`${h}:${String(m).padStart(2,'0')}${ap}`:`${h}${ap}`; }
+  const _WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], _MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function _dayDiff(d){ const n=new Date(), a=new Date(n.getFullYear(),n.getMonth(),n.getDate()), b=new Date(d.getFullYear(),d.getMonth(),d.getDate()); return Math.round((b-a)/86400000); }
+  function dayShort(d){ const x=_dayDiff(d); if(x===0)return'Today'; if(x===1)return'Tomorrow'; return _WD[d.getDay()]; }
+  function dayLong(d){ const x=_dayDiff(d); if(x===0)return'Today'; if(x===1)return'Tomorrow'; return `${_WD[d.getDay()]}, ${_MO[d.getMonth()]} ${d.getDate()}`; }
+  function agoWord(d){ const s=(Date.now()-d.getTime())/1000; if(s<90)return'just now'; const m=Math.round(s/60); if(m<60)return m+'m ago'; const h=Math.round(m/60); if(h<48)return h+'h ago'; return Math.round(h/24)+'d ago'; }
+  const EV_TIX_G=[['#e0b24c','#b07e25'],['#d4a247','#a8761f']], EV_FREE_G=[['#ff7a59','#df4527'],['#ff8a5b','#c83a1f']];
+  function buildEvents(rows){
+    Object.keys(EVENTS).forEach(k=>delete EVENTS[k]);
+    rows.forEach((r,i)=>{
+      const lat=+r.lat, lng=+r.lng; if(isNaN(lat)||isNaN(lng)) return;
+      const id=String(r.id||('e'+i));
+      const start=r.start_time?new Date(r.start_time):null, end=r.end_time?new Date(r.end_time):null;
+      if(start&&isNaN(start.getTime())) return;
+      const price=(r.price==null?'':r.price).toString().trim();
+      const free=/^(free|no cover|\$?0(\.00)?)$/i.test(price);
+      const g=(free?EV_FREE_G:EV_TIX_G); const gg=g[Math.floor(sd(id,'eg')*g.length)%g.length];
+      let cats=r.categories; if(Array.isArray(cats)) cats=cats.join(', '); cats=(cats||'').toString().replace(/[{}"]/g,'').replace(/,(?=\S)/g,', ').trim();
+      EVENTS[id]={ id, title:(r.title||'Event').toString(), source:(r.source||'').toString(), url:(r.url||'').toString(),
+        venue:(r.venue||'').toString(), area:(r.area||'').toString(), lat, lng, price, free,
+        age:(r.age_restriction||'').toString(), cats, img:(r.image_url||'').toString(),
+        start, end, startMs:start?start.getTime():0, checked:r.last_checked_at?new Date(r.last_checked_at):null,
+        g:gg, dot: free?'#ff8a5b':'#e7c05a' };
+    });
+  }
+  let evpLast='';
+  function fetchEvents(){
+    if(!mlmap||!mlReady) return;
+    const b=mlmap.getBounds();
+    const s=b.getSouth().toFixed(4), w=b.getWest().toFixed(4), n=b.getNorth().toFixed(4), e=b.getEast().toFixed(4);
+    const key=`${s},${w},${n},${e}`; if(key===evpLast) return; evpLast=key;
+    const since=new Date(Date.now()-3*3600*1000).toISOString();
+    const url=`${SUPA_URL}/rest/v1/events?select=id,title,source,url,start_time,end_time,venue,area,lat,lng,price,age_restriction,categories,image_url,last_checked_at`
+      +`&lat=gte.${s}&lat=lte.${n}&lng=gte.${w}&lng=lte.${e}&start_time=gte.${encodeURIComponent(since)}&order=start_time.asc&limit=200`;
+    fetch(url,{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}})
+      .then(r=>r.ok?r.json():null)
+      .then(rows=>{ if(Array.isArray(rows)){ buildEvents(rows); renderListChips(); if(FILTER==='events') render(); } })
+      .catch(()=>{});
+  }
+  function applyEventEta(id){ const ev=EVENTS[id]; if(curEventId!==id||!ev||!ev.etaReal)return; const e=ev.etaReal; if(e.walk)$('e-walk').textContent=e.walk+' min'; if(e.drive){ $('e-drive').textContent=e.drive+' min'; $('e-transit').textContent=Math.max(2,Math.round(e.drive*2.1))+' min'; } }
+  function fetchEventEta(ev){ if(ev.etaReal){ applyEventEta(ev.id); return; } Promise.all([osrmMin('routed-foot',ev),osrmMin('routed-car',ev)]).then(([w,d])=>{ if(w||d){ ev.etaReal={walk:w,drive:d}; applyEventEta(ev.id); } }); }
+  function openEvent(id){
+    const ev=EVENTS[id]; if(!ev) return; curEventId=id; selId=null; closeMenus(); render();
+    $('e-name').textContent=ev.title;
+    $('e-venue').textContent=[ev.venue,ev.area].filter(Boolean).join(' · ')||'Venue TBA';
+    $('e-when').textContent = ev.start? (dayLong(ev.start)+' · '+fmtTime(ev.start)) : 'Date TBA';
+    const dmi=haversine(HERE.lat,HERE.lng,ev.lat,ev.lng);
+    $('e-walk').textContent=Math.max(1,Math.round(dmi*20))+' min'; $('e-drive').textContent=Math.max(1,Math.round(dmi*5))+' min'; $('e-transit').textContent=Math.max(2,Math.round(dmi*14))+' min';
+    $('e-photos').innerHTML = ev.img?`<div class="sp" style="background-image:url('${ev.img}')"></div>`:`<div class="sp" style="background:${gx(ev.g)};width:100%;display:flex;align-items:flex-end;"><span class="pill">${ev.free?'Free entry':'Ticketed'}</span></div>`;
+    const meta=[ ev.free?'Free entry':(ev.price||'Ticketed'), ev.age, ev.cats ].filter(Boolean).join('   ·   ');
+    $('e-blurb').textContent = meta || 'Event details to come.';
+    $('e-tix').style.display = ev.url? '' : 'none';
+    if(ev.source||ev.checked){ $('e-src-sec').style.display='';
+      const srcName=ev.source? ev.source.charAt(0).toUpperCase()+ev.source.slice(1) : 'source';
+      $('e-src').innerHTML=`<span class="dotg"></span><span>Listed on <b>${srcName}</b>${ev.checked?' · checked '+agoWord(ev.checked):''}</span><span class="arr">›</span>`;
+    } else $('e-src-sec').style.display='none';
+    $('esheet').scrollTop=0; fetchEventEta(ev);
+    $('esheet').classList.add('on'); $('scrim').classList.add('on');
+  }
+  function closeEvent(){ $('esheet').classList.remove('on'); $('scrim').classList.remove('on'); if(curEventId){ curEventId=null; render(); } }
+  $('esheetHandle').onclick=closeEvent;
+  $('e-tix').onclick=()=>{ const ev=EVENTS[curEventId]; if(ev&&ev.url) openExternal(ev.url); };
+  $('e-src').onclick=()=>{ const ev=EVENTS[curEventId]; if(ev&&ev.url) openExternal(ev.url); };
+  $('e-dir').onclick=()=>openEventDir('walking');
   function locateUser(opts){ opts=opts||{};
     if(!navigator.geolocation){ if(opts.announce) toast('Location not supported on this device'); return; }
     navigator.geolocation.getCurrentPosition(

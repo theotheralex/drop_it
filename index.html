@@ -431,6 +431,7 @@
           <div class="avatar" id="avatar">A</div>
           <div class="chips2" id="chips">
             <div class="chip on" data-f="all">All</div>
+            <div class="chip chip-ev" data-f="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/></svg>Events</div>
             <div class="chip" data-f="food"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="3" x2="7" y2="21"/><path d="M5 3v4a2 2 0 0 0 4 0V3"/><path d="M16 3c-1.6 0-2.6 2-2.6 4.5S14.4 11 16 11v10"/></svg>Food</div>
             <div class="chip" data-f="drinks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14l-7 8-7-8z"/><line x1="12" y1="12" x2="12" y2="20"/><line x1="8" y1="20" x2="16" y2="20"/></svg>Drinks</div>
             <div class="chip" data-f="outdoors"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 13h5l-3 5h12l-3-5h5L12 2z"/><line x1="12" y1="18" x2="12" y2="22"/></svg>Outdoors</div>
@@ -897,7 +898,7 @@
     if(mlmap.touchZoomRotate && mlmap.touchZoomRotate.disableRotation) mlmap.touchZoomRotate.disableRotation();
     mlmap.on('load',()=>{ mlReady=true; if(MAPMODE==='dark') tintParks(); render(); fetchViewport(); fetchLandmarks(); fetchEvents(); });
     mlmap.on('click', mapClick);
-    mlmap.on('move',reposition); mlmap.on('zoom',scheduleRender); mlmap.on('moveend',()=>{ render(); updateEventChip(); scheduleViewport(); }); mlmap.on('resize',render);
+    mlmap.on('move',reposition); mlmap.on('zoom',scheduleRender); mlmap.on('moveend',()=>{ render(); scheduleViewport(); }); mlmap.on('resize',render);
   }
   $('zin').onclick=()=>{ if(mlmap) mlmap.zoomIn(); };
   $('zloc').onclick=()=>locateUser({announce:true});
@@ -1296,24 +1297,12 @@
   $('ld-delete').onclick=()=>{ if(detailListId==='fav')return; const b=$('ld-delete'); if(delArm!==detailListId){ delArm=detailListId; b.textContent='Tap again to delete'; b.classList.add('arm'); clearTimeout(delT); delT=setTimeout(()=>{ delArm=null; b.textContent='Delete list'; b.classList.remove('arm'); },3000); return; } LISTS=LISTS.filter(L=>L.id!==detailListId); Object.keys(PLACEINFO).forEach(pid=>{ if(!isSaved(pid)) delete PLACEINFO[pid]; }); persistLists(); clearTimeout(delT); delArm=null; renderLists(); renderListChips(); updateProfile(); showView('v-you'); toast('List deleted'); };
 
   // ---- Map "Saved" + per-list filter chips ----
-  const EVCHIP_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/></svg>Events';
-  function eventChipEl(){ const el=document.createElement('div'); el.className='chip chip-ev'; el.dataset.f='events'; el.dataset.dyn='1'; el.innerHTML=EVCHIP_SVG; return el; }
-  // upcoming events currently within the map view — makes the Events chip a contextual "what's on around here" pill
-  function eventsInView(){ const cut=Date.now()-3*3600*1000; const up=Object.values(EVENTS).filter(ev=>ev.start&&ev.startMs>=cut); if(!up.length) return false; if(!mlmap||!mlReady) return true; const b=mlmap.getBounds(),s=b.getSouth(),n=b.getNorth(),w=b.getWest(),e=b.getEast(); return up.some(ev=>ev.lat>=s&&ev.lat<=n&&ev.lng>=w&&ev.lng<=e); }
   function renderListChips(){ const c=$('chips'); if(!c) return; c.querySelectorAll('[data-dyn]').forEach(x=>x.remove());
     if(FILTER==='saved' && savedCount()===0) FILTER='all';
     if(typeof FILTER==='string' && FILTER.indexOf('list:')===0){ const L=listById(FILTER.slice(5)); if(!L||!L.items.length) FILTER='all'; }
-    const evUp=eventsInView();
-    if(FILTER==='events' && !evUp) FILTER='all';
-    if(evUp) c.appendChild(eventChipEl());   // first dynamic chip → sits right after the built-in filters
     if(savedCount()>0){ const s=document.createElement('div'); s.className='chip'; s.dataset.f='saved'; s.dataset.dyn='1'; s.innerHTML='♥ Saved'; c.appendChild(s); }
     LISTS.forEach(L=>{ if(!L.items.length||L.id==='fav') return; const el=document.createElement('div'); el.className='chip'; el.dataset.f='list:'+L.id; el.dataset.dyn='1'; el.textContent=L.name; c.appendChild(el); });
     c.querySelectorAll('.chip').forEach(ch=>ch.classList.toggle('on', ch.dataset.f===FILTER));
-  }
-  // lightweight viewport update on pan — toggles only the Events chip, so the row's scroll position isn't reset
-  function updateEventChip(){ const c=$('chips'); if(!c) return; const have=eventsInView(), ex=c.querySelector('.chip-ev');
-    if(have && !ex){ const el=eventChipEl(); c.insertBefore(el, c.querySelector('[data-dyn]')); el.classList.toggle('on', FILTER==='events'); }
-    else if(!have && ex){ ex.remove(); if(FILTER==='events'){ FILTER='all'; c.querySelectorAll('.chip').forEach(ch=>ch.classList.toggle('on', ch.dataset.f===FILTER)); render(); } }
   }
 
   // ---- Directions: open the device's maps app ----

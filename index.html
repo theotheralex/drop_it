@@ -186,6 +186,12 @@
   .sstatus .sdot.soon { background:var(--amber); box-shadow:0 0 8px rgba(255,181,71,.6); }
   .srate { display:flex; align-items:center; gap:8px; margin-top:12px; }
   .stars { color:var(--amber); font-weight:700; font-size:15px; } .srate .n { color:var(--dim); font-size:12.5px; }
+  .sgoogle { display:flex; align-items:center; flex-wrap:wrap; gap:6px; font-size:12.5px; color:var(--dim); margin-top:7px; }
+  .sgoogle .glogo { display:inline-flex; }
+  .sgoogle .gstar { color:#ffb547; }
+  .sgoogle .gdot { color:var(--mute); }
+  .sgoogle a { color:var(--coral-2); font-weight:600; text-decoration:none; white-space:nowrap; }
+  .sgoogle .gattr { width:100%; font-size:10px; color:var(--mute); margin-top:1px; }
   .etas { display:flex; gap:8px; margin-top:14px; }
   .eta { flex:1; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:11px; text-align:center; }
   .eta .t { font-weight:700; font-size:15px; } .eta .m { color:var(--mute); font-size:10.5px; margin-top:2px; text-transform:uppercase; letter-spacing:.06em; }
@@ -562,6 +568,7 @@
       <div class="scat" id="s-cat"></div>
       <div class="sstatus" id="s-status"></div>
       <div class="srate"><span class="stars" id="s-stars"></span><span class="n" id="s-rev"></span></div>
+      <div class="sgoogle" id="s-google" style="display:none"></div>
       <div class="etas" id="s-etas"><div class="eta" data-mode="walking"><div class="t" id="s-walk"></div><div class="m">walk</div></div><div class="eta" data-mode="driving"><div class="t" id="s-drive"></div><div class="m">drive</div></div><div class="eta" data-mode="transit"><div class="t" id="s-transit"></div><div class="m">transit</div></div></div>
       <div class="acts"><button class="ico" id="s-save"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></button><button class="primary" id="s-dir"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 11l19-9-9 19-2-8z"/></svg>Directions</button><button class="ghost" id="s-drop">Drop a pin</button></div>
       <div class="sec"><div class="blurb" id="s-blurb"></div></div>
@@ -734,8 +741,11 @@
   const TALIAS={'Taqueria':'Taquería'};
   const SEEDED_PARK={s:'Parking info not available yet',b:'',d:"We don't have parking details for this spot yet — check the map when you arrive."};
   const places = {};
-  function buildPlaces(rows){
-    Object.keys(places).forEach(k=>delete places[k]);
+  // Common chains get a ranking penalty so independent/local spots lead the map.
+  const CHAINS=['mcdonald','starbucks','subway','chipotle','chick-fil','chick fil','burger king','taco bell','wendy','kfc','jack in the box','panera','peet','dunkin','domino','pizza hut','panda express','in-n-out','in n out','shake shack','five guys','wingstop','jamba','philz','blue bottle','boudin','lazy dog','california fish grill','olive garden','cheesecake factory','applebee','denny','ihop','round table','sonic','popeyes','del taco','el pollo loco','little caesars','papa john','sweetgreen','noah','baskin','dairy queen','togo','jersey mike','firehouse subs','mod pizza','blaze pizza','outback','red lobster','red robin','buffalo wild','tgi friday','smashburger','habit burger','whataburger'];
+  function isChainName(nm){ const s=(nm||'').toLowerCase(); return CHAINS.some(c=>s.includes(c)); }
+  function buildPlaces(rows, keep){
+    if(!keep) Object.keys(places).forEach(k=>delete places[k]);
     rows.forEach((r,i)=>{
     const name=r.name??r[0], lat=r.lat??r[2], lng=r.lng??r[3];
     let type=r.type??r[1]; type=TALIAS[type]||type;
@@ -767,8 +777,10 @@
     }
     const busyPct=rated?Math.min(1,(live?0.42:0.12)+sd(name,'busy')*0.46+Math.min(0.22,posts/700)):0;
     const buslevel= busyPct>0.66?'Busy right now': busyPct>0.4?'Picking up':'Quiet right now';
-    const tscore= (rated?st*1.1:0) + Math.log10((rated?rc:0)+1)*0.7 + (live?1.5:0) + busyPct*1.4 + Math.min(1.2,posts/150) + pop*0.45;
-    places[id]={ id,name,type,cat,icon:ICON[type]||'utensils',live, busy:(rated&&live)? Math.min(1, posts/150) : 0,
+    const chain=isChainName(name);
+    let tscore= (rated?st*1.1:0) + Math.log10((rated?rc:0)+1)*0.7 + (live?1.5:0) + busyPct*1.4 + Math.min(1.2,posts/150) + pop*0.45;
+    if(chain) tscore -= 2.4;   // let independents lead the density budget
+    places[id]={ id,name,type,cat,icon:ICON[type]||'utensils',live, chain, busy:(rated&&live)? Math.min(1, posts/150) : 0,
       rated, pop, area:loc, hours:hint, website:r.website||'',
       stars: rated? st.toFixed(1) : null, rev: rated? rc.toLocaleString() : null,
       catLabel: loc? `${type} · ${loc}` : type, dist:dmi.toFixed(1)+' mi', open:(live?'● Open now · ':'● ')+hint,
@@ -993,9 +1005,35 @@
   function applyEta(p){ if(currentPlaceId!==p.id||!p.etaReal)return; const e=p.etaReal; if(e.walk)$('s-walk').textContent=e.walk+' min'; if(e.drive){ $('s-drive').textContent=e.drive+' min'; $('s-transit').textContent=Math.max(2,Math.round(e.drive*2.1))+' min'; } }
   function fetchEta(p){ if(p.etaReal){ applyEta(p); return; } Promise.all([osrmMin('routed-foot',p),osrmMin('routed-car',p)]).then(([w,d])=>{ if(w||d){ p.etaReal={walk:w,drive:d}; applyEta(p); } }); }
   function ratingBars(p){ return [5,4,3,2,1].map((st,i)=>`<div class="rbar"><span class="lab">${st}</span><span class="star">★</span><span class="track"><span class="fill" style="width:${p.rb[i]}%"></span></span><span class="pct">${p.rb[i]}%</span></div>`).join(''); }
+  // ---- Google Places enrichment (on-demand, session-only cache; nothing persisted but place_id) ----
+  const ENRICH={};                         // in-memory only, cleared on reload — NOT stored
+  const SUPA_FN_ENRICH=`${SUPA_URL}/functions/v1/place-enrich`;
+  const PRICE_MAP={PRICE_LEVEL_INEXPENSIVE:'$',PRICE_LEVEL_MODERATE:'$$',PRICE_LEVEL_EXPENSIVE:'$$$',PRICE_LEVEL_VERY_EXPENSIVE:'$$$$'};
+  const GLOGO='<svg width="13" height="13" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>';
+  function renderGoogle(p, e){
+    if(currentPlaceId!==p.id) return;     // user moved on
+    const el=$('s-google'); if(!el) return;
+    if(!e || !e.ok || e.rating==null){ el.style.display='none'; return; }
+    const price=PRICE_MAP[e.priceLevel]||'';
+    const open = e.openNow===true?'<span style="color:var(--green)">Open now</span>':(e.openNow===false?'<span style="color:var(--mute)">Closed</span>':'');
+    const bits=[`<span class="gstar">★</span> ${e.rating}`, e.userRatingCount?(e.userRatingCount.toLocaleString()):'', open, price].filter(Boolean);
+    el.innerHTML=`<span class="glogo">${GLOGO}</span>`+bits.join(' <span class="gdot">·</span> ')
+      +(e.googleMapsUri?` <span class="gdot">·</span> <a href="${e.googleMapsUri}" target="_blank" rel="noopener">View on Google ↗</a>`:'')
+      +`<span class="gattr">Ratings &amp; photo from Google</span>`;
+    el.style.display='flex';
+    if(e.photoUri){ const ph=$('sphotos'); if(ph && !ph.querySelector('.gphoto')) ph.insertAdjacentHTML('afterbegin', `<div class="sp gphoto" style="background-image:url('${e.photoUri}');background-size:cover;background-position:center;"><span class="pill">Google</span></div>`); }
+  }
+  function enrichPlace(p){
+    if(ENRICH[p.id]){ renderGoogle(p, ENRICH[p.id]); return; }
+    const q=`name=${encodeURIComponent(p.name)}&lat=${p.lat}&lng=${p.lng}&area=${encodeURIComponent(p.area||'')}`;
+    fetch(`${SUPA_FN_ENRICH}?${q}`,{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}})
+      .then(r=>r.ok?r.json():null)
+      .then(e=>{ if(e&&e.ok){ ENRICH[p.id]=e; renderGoogle(p, e); } })
+      .catch(()=>{});
+  }
   function openPlace(id){ const p=places[id]; if(!p)return; curLandmark=null; currentPlaceId=id; selId=id; openedAt=Date.now(); posLogged=false; logInteraction(id,'open'); render(); hideHint(); syncSaveBtn(id);
     $('s-name').innerHTML=p.name+(p.live?' <span class="livebadge"><span class="d"></span>LIVE</span>':'');
-    $('s-cat').textContent=p.catLabel; $('s-stars').textContent=p.rated?('★ '+p.stars):'Not rated yet'; $('s-rev').textContent=p.rated?(p.rev+' ratings'):'';
+    $('s-cat').textContent=p.catLabel; $('s-stars').textContent=p.rated?('★ '+p.stars):'Drop It · be the first to rate'; $('s-rev').textContent=p.rated?(p.rev+' ratings'):''; $('s-google').style.display='none';
     { const hrs=(p.hours||'').trim(); let tone='soon'; if(/^closed/i.test(hrs)) tone='closed'; else if(/^open/i.test(hrs)) tone='open'; $('s-status').innerHTML = hrs ? `<span class="sdot ${tone}"></span>${hrs}` : ''; }
     $('s-walk').textContent=p.walk; $('s-drive').textContent=p.drive; $('s-transit').textContent=p.transit; $('s-blurb').textContent=p.blurb;
     let strip=p.userPhotos.map(u=>`<div class="sp" style="background-image:url('${u}')"><span class="pill">Your post</span></div>`).join('');
@@ -1012,10 +1050,10 @@
     if(p.rated){ $('s-rnum').textContent=p.stars; $('s-rcnt').textContent=p.rev+' ratings'; $('s-rbars').innerHTML=ratingBars(p); }
     else { $('s-rnum').textContent='–'; $('s-rcnt').textContent='Not rated yet'; $('s-rbars').innerHTML=''; }
     $('s-reviews').innerHTML = p.reviews.length ? p.reviews.map(r=>`<div class="r"><div class="ra" style="background:${r[1]}">${r[0]}</div><div class="rt"><span class="rn">${r[2]}</span> <span class="rd">· ${r[3]}</span><br>${r[4]}<div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap;">${[...reactTags].sort((a,b)=>sd(p.name,a)-sd(p.name,b)).slice(0,2).map(t=>`<span style="font-size:9.5px;color:var(--dim);background:rgba(255,255,255,.04);border:1px solid var(--line);padding:3px 7px;border-radius:999px;">${t}</span>`).join('')}</div></div></div>`).join('') : '<div style="color:var(--mute);font-size:13px;">No friends have dropped a take here yet — be the first.</div>';
-    $('sheet').scrollTop=0; fetchEta(p); openSheet('peek');
+    $('sheet').scrollTop=0; fetchEta(p); enrichPlace(p); openSheet('peek');
   }
   function openFriend(id){ const f=friendsMeta[id]; if(!f)return; curLandmark=null; currentPlaceId=null; selId=null; render(); hideHint();
-    $('s-name').textContent=f.name; $('s-cat').textContent=f.where+' · '+f.ago; $('s-status').innerHTML=''; $('s-stars').textContent=''; $('s-rev').textContent='';
+    $('s-name').textContent=f.name; $('s-cat').textContent=f.where+' · '+f.ago; $('s-status').innerHTML=''; $('s-stars').textContent=''; $('s-rev').textContent=''; $('s-google').style.display='none';
     $('s-walk').textContent='–'; $('s-drive').textContent='–'; $('s-transit').textContent='–';
     $('s-blurb').textContent=f.note+'  (You only ever see a neighborhood glow — never an exact location.)';
     $('sphotos').innerHTML=`<div class="sp" style="background:${f.g};width:100%;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#fff;">${f.name[0]}</div>`;
@@ -1032,30 +1070,58 @@
     $('s-name').textContent=name;
     $('s-cat').textContent=area?`${label} · ${area}`:label;
     $('s-status').innerHTML=''; $('s-stars').textContent=''; $('s-rev').textContent='';
-    $('s-walk').textContent='–'; $('s-drive').textContent='–'; $('s-transit').textContent='–';
+    $('s-walk').textContent='–'; $('s-drive').textContent='–'; $('s-transit').textContent='–'; $('s-google').style.display='none';
     $('s-blurb').innerHTML='<span style="color:var(--mute)">Looking up info…</span>';
     $('sphotos').innerHTML=`<div class="sp" style="background:linear-gradient(135deg,#36404f,#212834);width:100%;"></div>`;
     $('s-parking').innerHTML=''; $('s-fhere-sec').style.display='none'; $('s-vids').innerHTML=''; $('s-vidcount').textContent='';
     $('s-photos').innerHTML=''; $('s-rnum').textContent=''; $('s-rcnt').textContent=''; $('s-rbars').innerHTML=''; $('s-reviews').innerHTML='';
     $('sheet').scrollTop=0; openSheet('full');
-    fetchWiki(name, area);
+    fetchWiki(name, area, lat, lng);
   }
-  function fetchWiki(name, area){
+  function fetchWiki(name, area, lat, lng){
     if(!name) return;
-    const q=encodeURIComponent(area?`${name} ${area}`:name);
-    const url=`https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${q}&gsrlimit=1&prop=extracts|pageimages|info&inprop=url&exintro=1&explaintext=1&exchars=460&piprop=thumbnail&pithumbsize=420`;
-    fetch(url).then(r=>r.ok?r.json():null).then(data=>{
-      if(!curLandmark || curLandmark.name!==name) return;   // sheet changed while loading
-      const pages=data&&data.query&&data.query.pages;
-      const page=pages?Object.values(pages)[0]:null;
-      if(page&&page.extract&&page.extract.trim()){
+    const norm=s=>(s||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+    const target=norm(name), tTok=target.split(' ').filter(w=>w.length>2);
+    // choose the page whose title genuinely matches the landmark name (guards against wrong hits)
+    function pick(pages){
+      if(!pages) return null;
+      let best=null, bestScore=0;
+      Object.values(pages).forEach(p=>{
+        const t=norm(p.title); let score=0;
+        if(t===target) score=100;
+        else if(t.includes(target)||target.includes(t)) score=80;
+        else if(tTok.length){ const tt=t.split(' '); score=tTok.filter(w=>tt.includes(w)).length/tTok.length*60; }
+        if(score>bestScore){ bestScore=score; best=p; }
+      });
+      return bestScore>=45 ? best : null;
+    }
+    const show=page=>{
+      if(!curLandmark || curLandmark.name!==name) return;
+      if(page && page.extract && page.extract.trim()){
         const link=page.fullurl||('https://en.wikipedia.org/?curid='+page.pageid);
         $('s-blurb').innerHTML=`${page.extract.trim()} <a href="${link}" target="_blank" rel="noopener" style="color:var(--coral-2);font-weight:600;white-space:nowrap;">Wikipedia ↗</a>`;
-        if(page.thumbnail&&page.thumbnail.source){ $('sphotos').innerHTML=`<div class="sp" style="background-image:url('${page.thumbnail.source}');background-size:cover;background-position:center;width:100%;"></div>`; }
+        if(page.thumbnail&&page.thumbnail.source) $('sphotos').innerHTML=`<div class="sp" style="background-image:url('${page.thumbnail.source}');background-size:cover;background-position:center;width:100%;"></div>`;
       } else {
-        $('s-blurb').innerHTML=`<span style="color:var(--dim)">No description found for this spot yet.</span>`;
+        $('s-blurb').innerHTML=`<span style="color:var(--dim)">No write-up for this spot yet.</span>`;
       }
-    }).catch(()=>{ if(curLandmark&&curLandmark.name===name) $('s-blurb').innerHTML=`<span style="color:var(--dim)">Couldn’t load info right now — check your connection.</span>`; });
+    };
+    const EX='&prop=extracts|pageimages|info&inprop=url&exintro=1&explaintext=1&exchars=500&piprop=thumbnail&pithumbsize=420';
+    const base='https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*';
+    // text-search fallback (still guarded by name match)
+    const tryText=()=>{
+      const q=encodeURIComponent(area?`${name} ${area}`:name);
+      fetch(`${base}&generator=search&gsrsearch=${q}&gsrlimit=5${EX}`)
+        .then(r=>r.ok?r.json():null)
+        .then(d=>{ if(!curLandmark||curLandmark.name!==name) return; show(pick(d&&d.query&&d.query.pages)); })
+        .catch(()=>{ if(curLandmark&&curLandmark.name===name) $('s-blurb').innerHTML=`<span style="color:var(--dim)">Couldn’t load info right now — check your connection.</span>`; });
+    };
+    // primary: Wikipedia articles geotagged near this exact spot, matched by name
+    if(!isNaN(lat)&&!isNaN(lng)){
+      fetch(`${base}&generator=geosearch&ggscoord=${lat}|${lng}&ggsradius=1500&ggslimit=10${EX}`)
+        .then(r=>r.ok?r.json():null)
+        .then(d=>{ if(!curLandmark||curLandmark.name!==name) return; const p=pick(d&&d.query&&d.query.pages); if(p) show(p); else tryText(); })
+        .catch(tryText);
+    } else tryText();
   }
   const friendsMeta = {
     maya:{name:"Maya",where:"around 24th & Mission",g:"linear-gradient(135deg,#8a5cf6,#e9388a)",note:"At El Farolito a little while ago — probably still close by.",ago:"active now"},
@@ -1125,40 +1191,64 @@
     function zoomForKind(v){ if(v==='country')return 5; if(v==='state'||v==='region'||v==='province')return 8; if(v==='county')return 10; if(v==='city'||v==='municipality')return 12; if(v==='town')return 13; if(v==='village'||v==='hamlet')return 14; return 14.5; }
     function geoSub(p){ const seen=new Set([p.name]), parts=[]; [p.city,p.state,p.country].forEach(x=>{ if(x&&!seen.has(x)){ seen.add(x); parts.push(x); } }); return [KIND[p.osm_value]||'Place', parts.slice(0,2).join(', ')].filter(Boolean).join(' · '); }
     let geoToken=0, geoResults=[], geoTimer=null, geoPending=false;
+    let venToken=0, venResults=[], venTimer=null, venPending=false;
+    const BAY={s:36.7,w:-123.6,n:38.95,e:-121.0};   // Bay Area box — keeps the geocoder from returning global noise
+    function placeRow(p){ return `<div class="sresult" data-id="${p.id}"><div class="si" style="background:${p.fill}">${p.icon==='TACO'?TACO:(ICONHTML[p.icon]||'')}</div><div><div class="sn">${p.name}</div><div class="sc">${p.catLabel}</div></div></div>`; }
     function paint(){
       const ql=si.value.trim().toLowerCase();
       if(!ql){ sr.style.display='none'; sr.innerHTML=''; return; }
-      const ms=Object.values(places).filter(p=>(p.name+' '+p.type+' '+p.cat).toLowerCase().includes(ql)).slice(0,6);
+      // venues: full-dataset matches once they load, else instant matches from what's on the map
+      const items = venResults.length ? venResults.map(id=>places[id]).filter(Boolean)
+        : Object.values(places).filter(p=>(p.name+' '+p.type+' '+p.cat).toLowerCase().includes(ql)).slice(0,8);
       let html='';
+      if(items.length){
+        html+='<div class="sgrp">Places</div>';
+        html+=items.map(placeRow).join('');
+      }
       if(geoResults.length){
         html+='<div class="sgrp">Cities &amp; neighborhoods</div>';
         html+=geoResults.map((g,i)=>`<div class="sresult" data-geo="${i}"><div class="si" style="background:#4a8fff">${GLOBE}</div><div><div class="sn">${g.name}</div><div class="sc">${geoSub(g.props)}</div></div></div>`).join('');
       }
-      if(ms.length){
-        html+='<div class="sgrp">Places</div>';
-        html+=ms.map(p=>`<div class="sresult" data-id="${p.id}"><div class="si" style="background:${p.fill}">${p.icon==='TACO'?TACO:(ICONHTML[p.icon]||'')}</div><div><div class="sn">${p.name}</div><div class="sc">${p.catLabel}</div></div></div>`).join('');
-      }
-      if(!html) html=`<div class="sresult" style="cursor:default;color:var(--mute)">${geoPending?'Searching…':'No matches'}</div>`;
+      if(!html) html=`<div class="sresult" style="cursor:default;color:var(--mute)">${(geoPending||venPending)?'Searching…':'No matches'}</div>`;
       sr.innerHTML=html; sr.style.display='block';
+    }
+    function venSearch(q){
+      const token=++venToken; venPending=true;
+      const url=`${SUPA_URL}/rest/v1/places?select=name,type,lat,lng,area,hours,website,pop,stars,ratings,osm_id&name=ilike.${encodeURIComponent('*'+q+'*')}&order=pop.desc&limit=24`;
+      fetch(url,{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}})
+        .then(r=>r.ok?r.json():null)
+        .then(rows=>{ if(token!==venToken) return; venPending=false;
+          if(Array.isArray(rows)&&rows.length){
+            buildPlaces(rows, true);   // merge into the tappable map without wiping the viewport
+            let c={lat:HERE.lat,lng:HERE.lng}; if(mlmap&&mlReady){ const m=mlmap.getCenter(); c={lat:m.lat,lng:m.lng}; }
+            venResults = rows.map(r=>{ const id=r.osm_id?'o'+String(r.osm_id).replace(/[^a-z0-9]/gi,''):null; return (id&&places[id])?{id,d:haversine(c.lat,c.lng,+r.lat,+r.lng)}:null; })
+              .filter(Boolean).sort((a,b)=>a.d-b.d).slice(0,8).map(x=>x.id);   // nearest matches first
+          } else venResults=[];
+          paint();
+        })
+        .catch(()=>{ if(token===venToken){ venPending=false; venResults=[]; paint(); } });
     }
     function geocode(q){
       const token=++geoToken; geoPending=true;
       let lat=HERE.lat, lng=HERE.lng; if(mlmap&&mlReady){ const c=mlmap.getCenter(); lat=c.lat; lng=c.lng; }
-      fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&osm_tag=place&limit=6&lat=${lat}&lon=${lng}`)
+      fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&osm_tag=place&limit=10&lat=${lat}&lon=${lng}`)
         .then(r=>r.ok?r.json():null)
         .then(j=>{ if(token!==geoToken) return; geoPending=false;
           const feats=(j&&j.features)||[];
-          geoResults=feats.map(f=>({ name:f.properties.name||f.properties.city||'', lng:f.geometry.coordinates[0], lat:f.geometry.coordinates[1], extent:f.properties.extent, props:f.properties })).filter(g=>g.name).slice(0,5);
+          geoResults=feats.map(f=>({ name:f.properties.name||f.properties.city||'', lng:f.geometry.coordinates[0], lat:f.geometry.coordinates[1], extent:f.properties.extent, props:f.properties }))
+            .filter(g=>g.name && g.lat>=BAY.s && g.lat<=BAY.n && g.lng>=BAY.w && g.lng<=BAY.e)   // Bay Area only
+            .slice(0,4);
           paint();
         })
         .catch(()=>{ if(token===geoToken){ geoPending=false; geoResults=[]; paint(); } });
     }
     function run(){ const q=si.value; SEARCH=q; sc.style.display=q?'block':'none'; const ql=q.trim();
-      if(!ql){ geoResults=[]; geoPending=false; clearTimeout(geoTimer); sr.style.display='none'; sr.innerHTML=''; render(); return; }
-      geoPending=true; paint(); render();
-      clearTimeout(geoTimer); geoTimer=setTimeout(()=>geocode(ql), 280);
+      if(!ql){ geoResults=[]; venResults=[]; geoPending=false; venPending=false; clearTimeout(geoTimer); clearTimeout(venTimer); sr.style.display='none'; sr.innerHTML=''; render(); return; }
+      geoPending=true; venPending=true; paint(); render();
+      clearTimeout(venTimer); venTimer=setTimeout(()=>venSearch(ql), 200);
+      clearTimeout(geoTimer); geoTimer=setTimeout(()=>geocode(ql), 300);
     }
-    function reset(){ si.value=''; SEARCH=''; geoResults=[]; geoPending=false; clearTimeout(geoTimer); sc.style.display='none'; sr.style.display='none'; sr.innerHTML=''; render(); }
+    function reset(){ si.value=''; SEARCH=''; geoResults=[]; venResults=[]; geoPending=false; venPending=false; clearTimeout(geoTimer); clearTimeout(venTimer); sc.style.display='none'; sr.style.display='none'; sr.innerHTML=''; render(); }
     si.addEventListener('input',run);
     sr.addEventListener('click',e=>{ const r=e.target.closest('.sresult'); if(!r)return;
       if(r.dataset.geo!==undefined){ const g=geoResults[+r.dataset.geo]; reset(); if(g&&mlmap){ if(g.extent&&g.extent.length===4){ const w=g.extent[0],n=g.extent[1],ee=g.extent[2],s=g.extent[3]; mlmap.fitBounds([[w,s],[ee,n]],{padding:60,maxZoom:15.5,duration:700}); } else { mlmap.easeTo({center:[g.lng,g.lat],zoom:zoomForKind(g.props.osm_value),duration:700}); } } return; }

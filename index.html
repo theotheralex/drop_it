@@ -307,9 +307,9 @@
   .tcard .trow { font-size:11px; color:var(--mute); margin-top:2px; display:flex; align-items:center; gap:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .tcard .trow .star { color:var(--amber); }
   /* ---- map style modes ---- */
-  body.m-light #mlmap, body.m-light #map { background:#e9e6df; }
-  body.m-light .mk.pin .lbl { background:rgba(255,255,255,.82); color:#1c1a16; box-shadow:0 2px 6px rgba(0,0,0,.14); }
-  body.m-light .mk.pin .body { box-shadow:0 3px 7px rgba(0,0,0,.3); }
+  body.m-light #mlmap, body.m-light #map { background:#f3efe6; }
+  body.m-light .mk.pin .lbl { background:#fff; color:#2a251d; border:1px solid rgba(38,32,22,.10); box-shadow:0 2px 7px rgba(40,33,20,.16); }
+  body.m-light .mk.pin .body { box-shadow:0 2px 7px rgba(40,33,20,.28); }
   .mk.lm { display:flex; transform:translate(-50%,-50%); flex-direction:column; align-items:center; gap:3px; }
   .mk.lm .lmchip { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(12,15,22,.72); border:2px solid currentColor; box-shadow:0 3px 10px rgba(0,0,0,.5); }
   body.m-light .mk.lm .lmchip { background:rgba(255,255,255,.9); box-shadow:0 3px 9px rgba(0,0,0,.18); }
@@ -322,11 +322,18 @@
   .themeseg button.on { background:var(--coral); color:#fff; }
   /* ---- light theme (follows the Light map) ---- */
   body.m-light {
-    --bg:#e9e5db; --bg-2:#f4f1ea; --surface:#ffffff; --surface-2:#e7e3d8;
-    --line:rgba(0,0,0,0.12); --text:#24201a; --dim:#6f6b62; --mute:#a39f95;
+    --bg:#f3efe6; --bg-2:#fbf9f3; --surface:#ffffff; --surface-2:#ece6da;
+    --line:rgba(38,32,22,.10); --text:#2a251d; --dim:#6c675b; --mute:#a8a193;
+    --coral-2:#dd472d; --amber:#e0962a;   /* deepened so links & stars stay legible on white */
+    --sh-sm:0 1px 2px rgba(40,33,20,.06); --sh:0 3px 10px rgba(40,33,20,.08); --sh-lg:0 10px 28px rgba(40,33,20,.12);
   }
-  body.m-light .eta, body.m-light .ycard, body.m-light .sec, body.m-light .modal { box-shadow:0 1px 2px rgba(0,0,0,.05); }
-  body.m-light .chip { background:rgba(255,255,255,0.92); }
+  /* light mode earns depth from soft shadows; dark mode keeps its glow/borders untouched */
+  body.m-light .eta, body.m-light .ycard, body.m-light .pk, body.m-light .ev, body.m-light .modal, body.m-light .tcard .timg, body.m-light .opt { box-shadow:var(--sh-sm); }
+  body.m-light .sheet, body.m-light .searchresults { box-shadow:var(--sh-lg); }
+  body.m-light .chip { background:#fff; box-shadow:var(--sh-sm); }
+  body.m-light .chip.on { box-shadow:0 3px 10px rgba(255,91,72,.30); }
+  body.m-light .chip-ev { color:#9c7521; background:#fff; border-color:rgba(212,162,71,.45); }
+  body.m-light .chip-ev.on { background:var(--gold); color:#3a2a08; border-color:var(--gold); }
   /* events layer */
   .ewhen { color:var(--gold); font-size:14.5px; font-weight:700; margin-top:8px; letter-spacing:.2px; }
   .esrc { display:flex; align-items:center; gap:8px; color:var(--dim); font-size:12px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:11px 12px; width:100%; text-align:left; font-family:inherit; cursor:pointer; }
@@ -345,15 +352,19 @@
   .feedlabel svg { width:14px; height:14px; }
   .feedlabel.ev-l { color:var(--gold); }
   .feedlabel.pl-l { color:var(--dim); margin-top:6px; }
-  body.m-light .searchpill { background:rgba(255,255,255,0.96); box-shadow:0 4px 14px rgba(0,0,0,.12); }
-  body.m-light .searchresults { background:rgba(255,255,255,0.98); box-shadow:0 14px 34px rgba(0,0,0,.2); }
+  body.m-light .searchpill { background:#fff; box-shadow:var(--sh); }
+  body.m-light .searchresults { background:#fff; }
   body.m-light .sresult:active { background:rgba(0,0,0,.05); }
-  body.m-light .zoomc button { background:rgba(255,255,255,0.95); }
-  body.m-light .zoomc { box-shadow:0 8px 20px rgba(0,0,0,.16); }
-  body.m-light .hint { background:rgba(255,255,255,0.92); }
-  body.m-light .dvpill { background:rgba(255,255,255,0.92); }
-  body.m-light .nav { background:rgba(255,255,255,0.94); }
-  body.m-light .rbar .track { background:rgba(0,0,0,.08); }
+  body.m-light .zoomc button { background:#fff; }
+  body.m-light .zoomc { box-shadow:var(--sh); }
+  body.m-light .hint { background:#fff; box-shadow:var(--sh-sm); }
+  body.m-light .dvpill { background:#fff; box-shadow:var(--sh-sm); }
+  body.m-light .nav { background:#fff; box-shadow:0 -2px 10px rgba(40,33,20,.05); }
+  body.m-light .rbar .track { background:rgba(40,33,20,.08); }
+  body.m-light .acts .primary { box-shadow:0 4px 12px rgba(255,91,72,.30); }
+  body.m-light .mscrim { background:linear-gradient(180deg, rgba(243,239,230,.9), transparent); }
+  body.m-light .dvmap, body.m-light #dvmlmap { background:#f3efe6; }
+  body.m-light .slbl { color:rgba(40,33,20,.62); text-shadow:0 1px 3px rgba(255,255,255,.85); }
   /* ----- Lists: profile section ----- */
   .lists-sec { margin-top:2px; }
   .lists-sec .sec-h { padding:6px 20px 8px; margin:0; }
@@ -893,7 +904,7 @@
   let LMK = LM.map(l=>({...l, pop:5}));   // seeded with the Mission set until Bay-wide landmarks load
   let MAPMODE='dark'; try{ const _t=localStorage.getItem('dropit_theme'); if(_t==='light'||_t==='dark') MAPMODE=_t; }catch(e){}
   function initMap(){
-    mlmap=new maplibregl.Map({ container:'mlmap', style:STYLE_DARK, center:[HERE.lng,HERE.lat], zoom:START_Z, attributionControl:false, dragRotate:false, pitchWithRotate:false });
+    mlmap=new maplibregl.Map({ container:'mlmap', style:(MAPMODE==='light'?STYLE_LIGHT:STYLE_DARK), center:[HERE.lng,HERE.lat], zoom:START_Z, attributionControl:false, dragRotate:false, pitchWithRotate:false });
     mlmap.addControl(new maplibregl.AttributionControl({compact:true, customAttribution:'Place data © OpenStreetMap contributors'}),'bottom-left');
     if(mlmap.touchZoomRotate && mlmap.touchZoomRotate.disableRotation) mlmap.touchZoomRotate.disableRotation();
     mlmap.on('load',()=>{ mlReady=true; if(MAPMODE==='dark') tintParks(); render(); fetchViewport(); fetchLandmarks(); fetchEvents(); });

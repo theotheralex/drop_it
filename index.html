@@ -331,7 +331,7 @@
   body.m-light .eta, body.m-light .ycard, body.m-light .pk, body.m-light .ev, body.m-light .modal, body.m-light .tcard .timg, body.m-light .opt { box-shadow:var(--sh-sm); }
   body.m-light .sheet, body.m-light .searchresults { box-shadow:var(--sh-lg); }
   body.m-light .chip { background:#fff; box-shadow:var(--sh-sm); }
-  body.m-light .chip.on { box-shadow:0 3px 10px rgba(255,91,72,.30); }
+  body.m-light .chip.on { background:var(--coral); color:#fff; border-color:var(--coral); box-shadow:0 3px 10px rgba(255,91,72,.30); }
   body.m-light .chip-ev { color:#9c7521; background:#fff; border-color:rgba(212,162,71,.45); }
   body.m-light .chip-ev.on { background:var(--gold); color:#3a2a08; border-color:var(--gold); }
   /* events layer */
@@ -836,7 +836,7 @@
       lmPlacedArr.push({x:sx,y:sy}); lmPlaced++;
       let lbl=''; const w=14+l.name.length*5.4, r={x:sx-w/2,y:sy+14,w,h:15};
       if(!pLabels.some(q=>!(r.x+r.w<q.x||r.x>q.x+q.w||r.y+r.h<q.y||r.y>q.y+q.h))){ pLabels.push(r); lbl=`<div class="lmlabel">${l.name}</div>`; }
-      html+=`<div class="mk lm" data-lng="${l.lng}" data-lat="${l.lat}" style="left:${sx}px;top:${sy}px"><div class="lmchip" style="color:${LM_C[l.t]||'#9aa3b2'}">${l.icon}</div>${lbl}</div>`;
+      html+=`<div class="mk lm" data-lm="1" data-lmname="${(l.name||'').replace(/"/g,'&quot;')}" data-lmtype="${l.t||''}" data-lmarea="${(l.area||'').replace(/"/g,'&quot;')}" data-lng="${l.lng}" data-lat="${l.lat}" style="left:${sx}px;top:${sy}px"><div class="lmchip" style="color:${LM_C[l.t]||'#9aa3b2'}">${l.icon}</div>${lbl}</div>`;
     }
     if(FILTER!=='events'){
     // --- Layer 2: food/drink density budget. Held back when zoomed out so landmarks lead. ---
@@ -874,10 +874,15 @@
   function mapClick(e){
     const px=e.point.x, py=e.point.y; let best=null, bestD=1e9;
     const nd=markers.children;
-    for(let i=0;i<nd.length;i++){ const el=nd[i]; if(el.classList.contains('fglow')||el.classList.contains('here')||el.classList.contains('lm')) continue; const x=parseFloat(el.style.left)||0; let y=parseFloat(el.style.top)||0; if(el.classList.contains('pin')) y-=14; const d=Math.hypot(x-px,y-py); if(d<bestD){ bestD=d; best=el; } }
-    if(!best || bestD>30) return;
+    for(let i=0;i<nd.length;i++){ const el=nd[i]; if(el.classList.contains('fglow')||el.classList.contains('here')) continue; const x=parseFloat(el.style.left)||0; let y=parseFloat(el.style.top)||0; if(el.classList.contains('pin')) y-=14; const d=Math.hypot(x-px,y-py); if(d<bestD){ bestD=d; best=el; } }
+    if(!best || bestD>30){   // tapped empty map → quick-dismiss any open detail sheet
+      if(sheetState!=='closed') setSheetState('closed', true);
+      if(typeof eState!=='undefined' && eState!=='closed') eSetState('closed', true);
+      return;
+    }
     if(best.dataset.ev) openEvent(best.dataset.ev);
     else if(best.dataset.id) openPlace(best.dataset.id);
+    else if(best.dataset.lm) openLandmark(best);
     else if(best.classList.contains('clu')){ mlmap.easeTo({center:[parseFloat(best.dataset.lng),parseFloat(best.dataset.lat)], zoom:Math.min(18,mlmap.getZoom()+1.4)}); }
     else if(best.dataset.friend) openFriend(best.dataset.friend);
   }
@@ -986,7 +991,7 @@
   function applyEta(p){ if(currentPlaceId!==p.id||!p.etaReal)return; const e=p.etaReal; if(e.walk)$('s-walk').textContent=e.walk+' min'; if(e.drive){ $('s-drive').textContent=e.drive+' min'; $('s-transit').textContent=Math.max(2,Math.round(e.drive*2.1))+' min'; } }
   function fetchEta(p){ if(p.etaReal){ applyEta(p); return; } Promise.all([osrmMin('routed-foot',p),osrmMin('routed-car',p)]).then(([w,d])=>{ if(w||d){ p.etaReal={walk:w,drive:d}; applyEta(p); } }); }
   function ratingBars(p){ return [5,4,3,2,1].map((st,i)=>`<div class="rbar"><span class="lab">${st}</span><span class="star">★</span><span class="track"><span class="fill" style="width:${p.rb[i]}%"></span></span><span class="pct">${p.rb[i]}%</span></div>`).join(''); }
-  function openPlace(id){ const p=places[id]; if(!p)return; currentPlaceId=id; selId=id; openedAt=Date.now(); posLogged=false; logInteraction(id,'open'); render(); hideHint(); syncSaveBtn(id);
+  function openPlace(id){ const p=places[id]; if(!p)return; curLandmark=null; currentPlaceId=id; selId=id; openedAt=Date.now(); posLogged=false; logInteraction(id,'open'); render(); hideHint(); syncSaveBtn(id);
     $('s-name').innerHTML=p.name+(p.live?' <span class="livebadge"><span class="d"></span>LIVE</span>':'');
     $('s-cat').textContent=p.catLabel; $('s-stars').textContent=p.rated?('★ '+p.stars):'Not rated yet'; $('s-rev').textContent=p.rated?(p.rev+' ratings'):'';
     { const hrs=(p.hours||'').trim(); let tone='soon'; if(/^closed/i.test(hrs)) tone='closed'; else if(/^open/i.test(hrs)) tone='open'; $('s-status').innerHTML = hrs ? `<span class="sdot ${tone}"></span>${hrs}` : ''; }
@@ -1007,7 +1012,7 @@
     $('s-reviews').innerHTML = p.reviews.length ? p.reviews.map(r=>`<div class="r"><div class="ra" style="background:${r[1]}">${r[0]}</div><div class="rt"><span class="rn">${r[2]}</span> <span class="rd">· ${r[3]}</span><br>${r[4]}<div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap;">${[...reactTags].sort((a,b)=>sd(p.name,a)-sd(p.name,b)).slice(0,2).map(t=>`<span style="font-size:9.5px;color:var(--dim);background:rgba(255,255,255,.04);border:1px solid var(--line);padding:3px 7px;border-radius:999px;">${t}</span>`).join('')}</div></div></div>`).join('') : '<div style="color:var(--mute);font-size:13px;">No friends have dropped a take here yet — be the first.</div>';
     $('sheet').scrollTop=0; fetchEta(p); openSheet('peek');
   }
-  function openFriend(id){ const f=friendsMeta[id]; if(!f)return; currentPlaceId=null; selId=null; render(); hideHint();
+  function openFriend(id){ const f=friendsMeta[id]; if(!f)return; curLandmark=null; currentPlaceId=null; selId=null; render(); hideHint();
     $('s-name').textContent=f.name; $('s-cat').textContent=f.where+' · '+f.ago; $('s-status').innerHTML=''; $('s-stars').textContent=''; $('s-rev').textContent='';
     $('s-walk').textContent='–'; $('s-drive').textContent='–'; $('s-transit').textContent='–';
     $('s-blurb').textContent=f.note+'  (You only ever see a neighborhood glow — never an exact location.)';
@@ -1015,6 +1020,40 @@
     $('s-parking').innerHTML=''; $('s-fhere-sec').style.display='none'; $('s-vids').innerHTML=''; $('s-vidcount').textContent='';
     $('s-photos').innerHTML=''; $('s-rnum').textContent=''; $('s-rcnt').textContent=''; $('s-rbars').innerHTML=''; $('s-reviews').innerHTML='';
     $('sheet').scrollTop=0; openSheet('full');
+  }
+  const LM_LABEL={ transit:'Transit stop', park:'Park', civic:'Landmark', mural:'Public art', museum:'Museum', theatre:'Theater', monument:'Monument', gallery:'Gallery', viewpoint:'Viewpoint', attraction:'Attraction', artwork:'Public art', memorial:'Memorial', library:'Library' };
+  function openLandmark(el){
+    const name=el.dataset.lmname||'', type=el.dataset.lmtype||'', area=el.dataset.lmarea||'';
+    const lat=parseFloat(el.dataset.lat), lng=parseFloat(el.dataset.lng);
+    curLandmark={name,lat,lng}; currentPlaceId=null; selId=null; curEvent=null; curEventId=null; render(); hideHint();
+    const label=LM_LABEL[type]||(type?type.charAt(0).toUpperCase()+type.slice(1):'Landmark');
+    $('s-name').textContent=name;
+    $('s-cat').textContent=area?`${label} · ${area}`:label;
+    $('s-status').innerHTML=''; $('s-stars').textContent=''; $('s-rev').textContent='';
+    $('s-walk').textContent='–'; $('s-drive').textContent='–'; $('s-transit').textContent='–';
+    $('s-blurb').innerHTML='<span style="color:var(--mute)">Looking up info…</span>';
+    $('sphotos').innerHTML=`<div class="sp" style="background:linear-gradient(135deg,#36404f,#212834);width:100%;"></div>`;
+    $('s-parking').innerHTML=''; $('s-fhere-sec').style.display='none'; $('s-vids').innerHTML=''; $('s-vidcount').textContent='';
+    $('s-photos').innerHTML=''; $('s-rnum').textContent=''; $('s-rcnt').textContent=''; $('s-rbars').innerHTML=''; $('s-reviews').innerHTML='';
+    $('sheet').scrollTop=0; openSheet('full');
+    fetchWiki(name, area);
+  }
+  function fetchWiki(name, area){
+    if(!name) return;
+    const q=encodeURIComponent(area?`${name} ${area}`:name);
+    const url=`https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${q}&gsrlimit=1&prop=extracts|pageimages|info&inprop=url&exintro=1&explaintext=1&exchars=460&piprop=thumbnail&pithumbsize=420`;
+    fetch(url).then(r=>r.ok?r.json():null).then(data=>{
+      if(!curLandmark || curLandmark.name!==name) return;   // sheet changed while loading
+      const pages=data&&data.query&&data.query.pages;
+      const page=pages?Object.values(pages)[0]:null;
+      if(page&&page.extract&&page.extract.trim()){
+        const link=page.fullurl||('https://en.wikipedia.org/?curid='+page.pageid);
+        $('s-blurb').innerHTML=`${page.extract.trim()} <a href="${link}" target="_blank" rel="noopener" style="color:var(--coral-2);font-weight:600;white-space:nowrap;">Wikipedia ↗</a>`;
+        if(page.thumbnail&&page.thumbnail.source){ $('sphotos').innerHTML=`<div class="sp" style="background-image:url('${page.thumbnail.source}');background-size:cover;background-position:center;width:100%;"></div>`; }
+      } else {
+        $('s-blurb').innerHTML=`<span style="color:var(--dim)">No description found for this spot yet.</span>`;
+      }
+    }).catch(()=>{ if(curLandmark&&curLandmark.name===name) $('s-blurb').innerHTML=`<span style="color:var(--dim)">Couldn’t load info right now — check your connection.</span>`; });
   }
   const friendsMeta = {
     maya:{name:"Maya",where:"around 24th & Mission",g:"linear-gradient(135deg,#8a5cf6,#e9388a)",note:"At El Farolito a little while ago — probably still close by.",ago:"active now"},
@@ -1340,6 +1379,7 @@
   document.querySelectorAll('#dirprefopts .opt').forEach(o=>o.onclick=()=>setDirPref(o.dataset.pref));
   $('dirremember').onclick=function(){ this.classList.toggle('on'); };
   let dirObj=null;
+  let curLandmark=null;   // {name,lat,lng} when a landmark detail is open
   function doDirections(provider){ if(dirObj) openExternal(dirUrl(provider,dirObj,dirMode)); }
   function showDirChooser(){
     const opts=[];
@@ -1351,6 +1391,7 @@
     closeMenus(); $('scrim').classList.add('on'); $('dirm').classList.add('on');
   }
   function openDirChooser(mode){
+    if(curLandmark){ dirObj=curLandmark; dirMode=mode||'walking'; if(dirPref!=='ask'){ doDirections(dirPref); return; } showDirChooser(); return; }
     if(!currentPlaceId||!places[currentPlaceId]) return;
     dirPlaceId=currentPlaceId; dirObj=places[currentPlaceId]; dirMode=mode||'walking';
     logInteraction(dirPlaceId,'directions'); posLogged=true;
@@ -1387,7 +1428,7 @@
       +`&lat=gte.${s}&lat=lte.${n}&lng=gte.${w}&lng=lte.${e}&order=pop.desc&limit=80`;
     fetch(url,{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}})
       .then(r=>r.ok?r.json():null)
-      .then(rows=>{ if(Array.isArray(rows)&&rows.length){ LMK=rows.map(l=>({name:l.name,lat:l.lat,lng:l.lng,t:l.type,pop:l.pop||0,icon:LM_ICON[l.type]||LM_BLDG})); render(); } })
+      .then(rows=>{ if(Array.isArray(rows)&&rows.length){ LMK=rows.map(l=>({name:l.name,lat:l.lat,lng:l.lng,t:l.type,area:l.area||'',pop:l.pop||0,icon:LM_ICON[l.type]||LM_BLDG})); render(); } })
       .catch(()=>{});
   }
   function scheduleViewport(){ clearTimeout(vpTimer); vpTimer=setTimeout(()=>{ fetchViewport(); fetchLandmarks(); fetchEvents(); },450); }
@@ -1462,7 +1503,7 @@
   function onSaveTapEvent(){ if(!curEvent) return; openListSheet(curEvent.id); }
   function openEvent(id){
     let ev=EVENTS[id]; if(!ev){ const mi=PLACEINFO[id]; if(mi&&mi.kind==='event') ev=eventFromMini(mi); } if(!ev) return;
-    curEventId=id; curEvent=ev; selId=null; closeMenus(); render(); syncEventSaveBtn();
+    curEventId=id; curEvent=ev; curLandmark=null; selId=null; closeMenus(); render(); syncEventSaveBtn();
     $('e-name').textContent=ev.title;
     $('e-venue').textContent=[ev.venue,ev.area].filter(Boolean).join(' · ')||'Venue TBA';
     $('e-when').textContent = ev.start? (dayLong(ev.start)+' · '+fmtTime(ev.start)) : 'Date TBA';

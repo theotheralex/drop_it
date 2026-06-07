@@ -116,6 +116,8 @@
   .chips2::-webkit-scrollbar { display:none; }
   .chip { flex-shrink:0; padding:8px 14px; border-radius:999px; background:rgba(20,24,34,0.92); border:1px solid var(--line); font-size:12.5px; font-weight:600; color:var(--dim); white-space:nowrap; }
   .chip.on { background:var(--coral); color:#fff; border-color:var(--coral); }
+  #dvvibes { padding:0 18px 2px; }
+  .chip.vibe.on { background:var(--teal); color:#04201c; border-color:var(--teal); }
   .searchwrap { position:absolute; top:calc(env(safe-area-inset-top, 0px) + 64px); left:12px; right:12px; z-index:16; }
   .searchpill { height:42px; border-radius:999px; background:rgba(18,22,32,.93); border:1px solid var(--line); display:flex; align-items:center; gap:9px; padding:0 15px; box-shadow:0 4px 14px rgba(0,0,0,.3); }
   .searchpill input { flex:1; min-width:0; background:none; border:none; outline:none; color:var(--text); font-family:inherit; font-size:13.5px; font-weight:500; }
@@ -385,6 +387,7 @@
   body.m-light .sheet, body.m-light .searchresults { box-shadow:var(--sh-lg); }
   body.m-light .chip { background:#fff; box-shadow:var(--sh-sm); }
   body.m-light .chip.on { background:var(--coral); color:#fff; border-color:var(--coral); box-shadow:0 3px 10px rgba(255,91,72,.30); }
+  body.m-light .chip.vibe.on { background:var(--teal); color:#04201c; border-color:var(--teal); box-shadow:0 3px 10px rgba(45,212,191,.30); }
   body.m-light .chip-ev { color:#9c7521; background:#fff; border-color:rgba(212,162,71,.45); }
   body.m-light .chip-ev.on { background:var(--gold); color:#3a2a08; border-color:var(--gold); }
   body.m-light .chip-gem { color:#0e9f6e; background:#fff; border-color:rgba(16,185,129,.45); }
@@ -528,6 +531,7 @@
       <div class="dvdrawer">
         <div class="grab2"></div>
         <div class="dvhead"><div class="dveye">Wednesday · 7:42 PM</div><div class="dvtitle">Live <em>now</em> nearby.</div></div>
+        <div class="dvtrend" id="dvvibes-wrap"><div class="dvtrend-h">Browse by vibe</div><div class="chips2" id="dvvibes"></div></div>
         <div class="dvtrend" id="dvforyou-wrap" style="display:none"><div class="dvtrend-h"><svg viewBox="0 0 24 24" fill="none" stroke="#8a5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.3 6.9H21l-5.4 4 2.1 6.6L12 16.6 6.3 20.5l2.1-6.6-5.4-4h6.7z"/></svg> For you</div><div class="dvtrend-rail" id="dvforyou"></div></div>
         <div class="dvtrend"><div class="dvtrend-h"><svg viewBox="0 0 24 24" fill="none" stroke="#e0985a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="15.5 8.5 13.5 13.5 8.5 15.5 10.5 10.5"/></svg> Worth a look</div><div class="dvtrend-rail" id="dvtrend"></div></div>
         <div class="dvseg" id="dvseg"><button class="on" data-seg="now">Now</button><button data-seg="tonight">Tonight</button><button data-seg="weekend">Weekend</button></div>
@@ -839,6 +843,7 @@
     const buslevel= busyPct>0.66?'Busy right now': busyPct>0.4?'Picking up':'Quiet right now';
     const chain = (typeof r.fsq_is_chain==='boolean') ? r.fsq_is_chain : isChainName(name); // FSQ's authoritative flag when matched, else name heuristic
     const fsqR=numOrNull(r.fsq_rating), fsqP=numOrNull(r.fsq_pop);
+    const tastes = Array.isArray(r.fsq_tastes) ? r.fsq_tastes.map(t=>(''+t).toLowerCase()) : [];
     let gemScore=null, gemQ=0, gemO=0, gemI=0, gpick=false;
     if(fsqR!=null && fsqP!=null){
       gemQ=clamp01(fsqR/10); gemO=Math.pow(clamp01(1-fsqP),0.6); gemI=chain?0.30:1.0;
@@ -847,7 +852,7 @@
     }
     let tscore= (rated?st*1.1:0) + Math.log10((rated?rc:0)+1)*0.7 + (live?1.5:0) + busyPct*1.4 + Math.min(1.2,posts/150) + pop*0.45;
     if(chain) tscore -= 2.4;   // let independents lead the density budget
-    places[id]={ id,name,type,cat,icon:ICON[type]||'utensils',live, chain, busy:(rated&&live)? Math.min(1, posts/150) : 0,
+    places[id]={ id,name,type,cat,icon:ICON[type]||'utensils',live, chain, tastes, busy:(rated&&live)? Math.min(1, posts/150) : 0,
       rated, pop, area:loc, hours:hint, website:r.website||'',
       stars: rated? st.toFixed(1) : null, rev: rated? rc.toLocaleString() : null,
       catLabel: loc? `${type} · ${loc}` : type, dist:dmi.toFixed(1)+' mi', open:(live?'● Open now · ':'● ')+hint,
@@ -1054,8 +1059,25 @@
       .then(e=>{ const u=(e&&e.ok&&e.photo)?e.photo:null; PHOTOC[key]=u; apply(u); })
       .catch(()=>{ PHOTOC[key]=null; });
   }
+  // ---- Vibe filters (Discover only). Labels map to keywords matched against fsq tastes. ----
+  const VIBES_MAP = {
+    'Date night':    ['good for dates','romantic','date','intimate','cocktails','wine','candlelit'],
+    'Happy hour':    ['happy hour','beer','dive','great value','after work','draft'],
+    'Live music':    ['live music','music','bands','jazz','concert','dj'],
+    'Dancing':       ['dancing','dance floor','disco','club','djs','nightlife'],
+    'Brunch':        ['brunch','breakfast','pancakes','mimosas','eggs'],
+    'Patio':         ['outdoor seating','patio','outdoor','beer garden','rooftop','sidewalk'],
+    'Cozy':          ['cozy','intimate','quiet','charming','warm','hidden'],
+    'Late night':    ['late night','open late','after hours','24 hours'],
+    'Coffee & work': ['coffee','espresso','good for working','laptops','wifi','study'],
+    'Groups':        ['good for groups','groups','large parties','spacious']
+  };
+  const VIBE_KEYS = Object.keys(VIBES_MAP);
+  let VIBE = null;
+  function vibeMatch(p){ if(!VIBE) return true; const ks=VIBES_MAP[VIBE]||[], ts=p.tastes||[]; return ts.some(t=>ks.some(k=>t.indexOf(k)>=0)); }
+  function renderVibes(){ const rail=$('dvvibes'); if(!rail) return; rail.innerHTML=VIBE_KEYS.map((v,i)=>`<div class="chip vibe${v===VIBE?' on':''}" data-vi="${i}">${v}</div>`).join(''); }
   function renderTrending(){ const rail=$('dvtrend'); if(!rail) return;
-    const top=Object.values(places).map(p=>{ const q=(p.fsqRating!=null)?clamp01(p.fsqRating/10):0.45, ind=p.chain?0.5:1, prox=Math.exp(-(parseFloat(p.dist)||3)/2); return {p,s:q*ind*prox}; }).sort((a,b)=>b.s-a.s).slice(0,5).map(x=>x.p);
+    const top=Object.values(places).filter(vibeMatch).map(p=>{ const q=(p.fsqRating!=null)?clamp01(p.fsqRating/10):0.45, ind=p.chain?0.5:1, prox=Math.exp(-(parseFloat(p.dist)||3)/2); return {p,s:q*ind*prox}; }).sort((a,b)=>b.s-a.s).slice(0,5).map(x=>x.p);
     rail.innerHTML=top.map((p,i)=>`<div class="tcard" data-id="${p.id}"><div class="timg gph-target" data-pn="${(p.name||'').replace(/"/g,'&quot;')}" data-pa="${(p.area||'').replace(/"/g,'&quot;')}" data-plat="${p.lat}" data-plng="${p.lng}" style="background:${gx(p.g[0])}"><div class="trank">${i+1}</div></div><div class="tnm">${p.name}</div><div class="trow">${p.pick?'<span style="color:#34d399;font-weight:700;">◆ Local pick</span>':`${p.type}${p.area?' · '+p.area:''}`}</div></div>`).join('');
     hydrateDiscoverPhotos();
   }
@@ -1089,6 +1111,7 @@
     if(seg==='now') list=list.filter(([id,p])=>p.live);
     else if(seg==='tonight') list=list.filter(([id,p])=>['drinks','music'].includes(p.cat));
     else list=list.filter(([id,p])=>['outdoors','food'].includes(p.cat));
+    if(VIBE) list=list.filter(([id,p])=>vibeMatch(p));
     list.sort((a,b)=>(b[1].live-a[1].live)||((+b[1].stars||0)-(+a[1].stars||0))||(b[1].pop-a[1].pop));
     list=list.slice(0,5);
     const plHTML = list.map(([id,p])=>{ const fh=p.fhere.length;
@@ -1102,6 +1125,8 @@
   $('dvfeed').addEventListener('click',e=>{ const c=e.target.closest('.ev'); if(!c)return; if(c.dataset.ev) openEvent(c.dataset.ev); else if(c.dataset.id) openPlace(c.dataset.id); });
   $('dvtrend').addEventListener('click',e=>{ const c=e.target.closest('.tcard'); if(c) openPlace(c.dataset.id); });
   $('dvforyou').addEventListener('click',e=>{ const c=e.target.closest('.tcard'); if(c&&c.dataset.id) openPlace(c.dataset.id); });
+  $('dvvibes') && $('dvvibes').addEventListener('click',e=>{ const c=e.target.closest('.chip'); if(!c)return; const v=VIBE_KEYS[+c.dataset.vi]; VIBE=(VIBE===v)?null:v; renderVibes(); if(VIBE){ const fw=$('dvforyou-wrap'); if(fw) fw.style.display='none'; } else { loadForYou(); } renderTrending(); discoverFeed(curSeg); });
+  renderVibes();
   discoverFeed('now');
 
   const OSRM_BASE='https://routing.openstreetmap.de';
@@ -1471,6 +1496,7 @@
   // ---- "For you": personalized picks from the recommend_places RPC ----
   function loadForYou(){
     const wrap=$('dvforyou-wrap'), rail=$('dvforyou'); if(!wrap||!rail) return;
+    if(VIBE){ wrap.style.display='none'; return; }
     let s,w,n,e;
     if(mlmap&&mlReady){ const b=mlmap.getBounds(); s=b.getSouth(); w=b.getWest(); n=b.getNorth(); e=b.getEast(); }
     else { s=HERE.lat-0.02; n=HERE.lat+0.02; w=HERE.lng-0.02; e=HERE.lng+0.02; }
@@ -1659,7 +1685,7 @@
     const b=mlmap.getBounds();
     const s=b.getSouth().toFixed(4), w=b.getWest().toFixed(4), n=b.getNorth().toFixed(4), e=b.getEast().toFixed(4);
     const key=`${s},${w},${n},${e}`; if(key===vpLast) return; vpLast=key;
-    const url=`${SUPA_URL}/rest/v1/places?select=name,type,lat,lng,area,hours,website,pop,stars,ratings,osm_id,fsq_rating,fsq_pop,fsq_id,fsq_is_chain`
+    const url=`${SUPA_URL}/rest/v1/places?select=name,type,lat,lng,area,hours,website,pop,stars,ratings,osm_id,fsq_rating,fsq_pop,fsq_id,fsq_is_chain,fsq_tastes`
       +`&lat=gte.${s}&lat=lte.${n}&lng=gte.${w}&lng=lte.${e}&order=pop.desc&limit=300`;
     fetch(url,{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}})
       .then(r=>r.ok?r.json():null)

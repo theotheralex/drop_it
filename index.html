@@ -1091,11 +1091,23 @@
     $('sheet').scrollTop=0; openSheet('full');
   }
   const LM_LABEL={ transit:'Transit stop', park:'Park', civic:'Landmark', mural:'Public art', museum:'Museum', theatre:'Theater', monument:'Monument', gallery:'Gallery', viewpoint:'Viewpoint', attraction:'Attraction', artwork:'Public art', memorial:'Memorial', library:'Library' };
+  // refine a landmark into a finer kind from its raw type + name (used for labels, descriptions, icons)
+  function lmKind(name,type){
+    const n=(name||'').toLowerCase(), t=(type||'').toLowerCase();
+    if(t==='transit') return 'transit';
+    if(t==='park') return 'park';
+    if(t==='mural') return 'mural';
+    if(/\blibrar/.test(n)) return 'library';
+    if(/\bmuseum\b/.test(n)) return 'museum';
+    if(/\btheat(er|re)\b/.test(n)) return 'theatre';
+    return t==='civic'?'civic':(t||'civic');
+  }
   function openLandmark(el){
     const name=el.dataset.lmname||'', type=el.dataset.lmtype||'', area=el.dataset.lmarea||'';
     const lat=parseFloat(el.dataset.lat), lng=parseFloat(el.dataset.lng);
+    const kind=lmKind(name,type);
     curLandmark={name,lat,lng}; currentPlaceId=null; selId=null; curEvent=null; curEventId=null; render(); hideHint();
-    const label=LM_LABEL[type]||(type?type.charAt(0).toUpperCase()+type.slice(1):'Landmark');
+    const label=LM_LABEL[kind]||LM_LABEL[type]||(type?type.charAt(0).toUpperCase()+type.slice(1):'Landmark');
     $('s-name').textContent=name;
     $('s-cat').textContent=area?`${label} · ${area}`:label;
     $('s-status').innerHTML=''; $('s-stars').textContent=''; $('s-rev').textContent='';
@@ -1105,48 +1117,58 @@
     $('s-parking').innerHTML=''; $('s-fhere-sec').style.display='none'; $('s-vids').innerHTML=''; $('s-vidcount').textContent='';
     $('s-photos').innerHTML=''; $('s-rnum').textContent=''; $('s-rcnt').textContent=''; $('s-rbars').innerHTML=''; $('s-reviews').innerHTML='';
     $('sheet').scrollTop=0; openSheet('full');
-    fetchWiki(name, area, lat, lng);
+    fetchWiki(name, kind, area, lat, lng);
   }
-  function fetchWiki(name, area, lat, lng){
+  function fetchWiki(name, kind, area, lat, lng){
     if(!name) return;
     const norm=s=>(s||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
     const target=norm(name), tTok=target.split(' ').filter(w=>w.length>2);
-    // choose the page whose title genuinely matches the landmark name (guards against wrong hits)
+    // words too generic to confirm a match on their own
+    const GEN=new Set('the of and a in on at park library station center centre school public branch san francisco oakland berkeley district hall plaza square building house memorial monument garden gardens street saint ave avenue blvd boulevard road bart muni caltrain art mural museum theater theatre college university bay area california county city national state mission'.split(' '));
+    const tDist=tTok.filter(w=>!GEN.has(w));
+    // accept a page only if its title genuinely matches the landmark name — not just a shared generic word
     function pick(pages){
       if(!pages) return null;
-      let best=null, bestScore=0;
+      let best=null, bestScore=-1, bestIdx=1e9;
       Object.values(pages).forEach(p=>{
-        const t=norm(p.title); let score=0;
+        const t=norm(p.title), tt=t.split(' '), idx=(p.index==null?500:p.index); let score=0;
         if(t===target) score=100;
-        else if(t.includes(target)||target.includes(t)) score=80;
-        else if(tTok.length){ const tt=t.split(' '); score=tTok.filter(w=>tt.includes(w)).length/tTok.length*60; }
-        if(score>bestScore){ bestScore=score; best=p; }
+        else if(t.includes(target)||target.includes(t)){ const shareDist=tDist.some(w=>tt.includes(w)); score=(tDist.length===0||shareDist)?80:0; }
+        else if(tTok.length){ const matched=tTok.filter(w=>tt.includes(w)); const dist=matched.filter(w=>!GEN.has(w)); const ratio=matched.length/tTok.length; score=(dist.length>=1&&ratio>=0.5)?ratio*65:0; }
+        if(score>bestScore || (score===bestScore && idx<bestIdx)){ bestScore=score; bestIdx=idx; best=p; }   // tie → closer/more-relevant
       });
-      return bestScore>=45 ? best : null;
+      return bestScore>=55 ? best : null;
     }
+    const inArea=area?` in ${area}`:'';
+    const FB={ library:`A neighborhood public library${inArea}.`, transit:`A public transit stop${area?` serving ${area}`:' on the local network'}.`,
+      park:`A public park and open space${inArea}.`, mural:`A public mural${inArea} — part of the neighborhood's street art.`,
+      museum:`A museum${inArea}.`, theatre:`A theater${inArea}.`, civic:`A civic landmark${inArea}.` };
+    const fallback=()=>{
+      if(!curLandmark||curLandmark.name!==name) return;
+      const txt=FB[kind]||`A local landmark${inArea}.`;
+      const ws='https://en.wikipedia.org/w/index.php?search='+encodeURIComponent(name);
+      $('s-blurb').innerHTML=`<span style="color:var(--dim)">${txt}</span> <a href="${ws}" target="_blank" rel="noopener" style="color:var(--coral-2);font-weight:600;white-space:nowrap;">Look up on Wikipedia ↗</a>`;
+    };
     const show=page=>{
       if(!curLandmark || curLandmark.name!==name) return;
       if(page && page.extract && page.extract.trim()){
         const link=page.fullurl||('https://en.wikipedia.org/?curid='+page.pageid);
         $('s-blurb').innerHTML=`${page.extract.trim()} <a href="${link}" target="_blank" rel="noopener" style="color:var(--coral-2);font-weight:600;white-space:nowrap;">Wikipedia ↗</a>`;
         if(page.thumbnail&&page.thumbnail.source) $('sphotos').innerHTML=`<div class="sp" style="background-image:url('${page.thumbnail.source}');background-size:cover;background-position:center;width:100%;"></div>`;
-      } else {
-        $('s-blurb').innerHTML=`<span style="color:var(--dim)">No write-up for this spot yet.</span>`;
-      }
+      } else fallback();
     };
     const EX='&prop=extracts|pageimages|info&inprop=url&exintro=1&explaintext=1&exchars=500&piprop=thumbnail&pithumbsize=420';
     const base='https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*';
-    // text-search fallback (still guarded by name match)
     const tryText=()=>{
       const q=encodeURIComponent(area?`${name} ${area}`:name);
-      fetch(`${base}&generator=search&gsrsearch=${q}&gsrlimit=5${EX}`)
+      fetch(`${base}&generator=search&gsrsearch=${q}&gsrlimit=6${EX}`)
         .then(r=>r.ok?r.json():null)
-        .then(d=>{ if(!curLandmark||curLandmark.name!==name) return; show(pick(d&&d.query&&d.query.pages)); })
-        .catch(()=>{ if(curLandmark&&curLandmark.name===name) $('s-blurb').innerHTML=`<span style="color:var(--dim)">Couldn’t load info right now — check your connection.</span>`; });
+        .then(d=>{ if(!curLandmark||curLandmark.name!==name) return; const p=pick(d&&d.query&&d.query.pages); p?show(p):fallback(); })
+        .catch(fallback);
     };
     // primary: Wikipedia articles geotagged near this exact spot, matched by name
     if(!isNaN(lat)&&!isNaN(lng)){
-      fetch(`${base}&generator=geosearch&ggscoord=${lat}|${lng}&ggsradius=1500&ggslimit=10${EX}`)
+      fetch(`${base}&generator=geosearch&ggscoord=${lat}|${lng}&ggsradius=1000&ggslimit=10${EX}`)
         .then(r=>r.ok?r.json():null)
         .then(d=>{ if(!curLandmark||curLandmark.name!==name) return; const p=pick(d&&d.query&&d.query.pages); if(p) show(p); else tryText(); })
         .catch(tryText);
@@ -1581,7 +1603,7 @@
         venue:(r.venue||'').toString(), area:(r.area||'').toString(), lat, lng, price, free,
         age:(r.age_restriction||'').toString(), cats, img:(r.image_url||'').toString(),
         start, end, startMs:start?start.getTime():0, checked:r.last_checked_at?new Date(r.last_checked_at):null,
-        g:gg, dot: free?'#ff8a5b':'#e7c05a', interested:intr };
+        g:gg, dot: free?'#ff8a5b':'#e7c05a', interested:intr, desc:(r.description||'').toString() };
     });
   }
   let evpLast='';
@@ -1591,7 +1613,7 @@
     const s=b.getSouth().toFixed(4), w=b.getWest().toFixed(4), n=b.getNorth().toFixed(4), e=b.getEast().toFixed(4);
     const key=`${s},${w},${n},${e}`; if(key===evpLast) return; evpLast=key;
     const since=new Date(Date.now()-3*3600*1000).toISOString();
-    const url=`${SUPA_URL}/rest/v1/events?select=id,title,source,url,start_time,end_time,venue,area,lat,lng,price,age_restriction,categories,image_url,last_checked_at`
+    const url=`${SUPA_URL}/rest/v1/events?select=id,title,source,url,start_time,end_time,venue,area,lat,lng,price,age_restriction,categories,image_url,description,last_checked_at`
       +`&lat=gte.${s}&lat=lte.${n}&lng=gte.${w}&lng=lte.${e}&start_time=gte.${encodeURIComponent(since)}&order=start_time.asc&limit=200`;
     fetch(url,{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}})
       .then(r=>r.ok?r.json():null)
@@ -1633,7 +1655,11 @@
     $('e-walk').textContent=Math.max(1,Math.round(dmi*20))+' min'; $('e-drive').textContent=Math.max(1,Math.round(dmi*5))+' min'; $('e-transit').textContent=Math.max(2,Math.round(dmi*14))+' min';
     $('e-photos').innerHTML = ev.img?`<div class="sp" style="background-image:url('${ev.img}')"></div>`:`<div class="sp" style="background:${gx(ev.g)};width:100%;display:flex;align-items:flex-end;"><span class="pill">${ev.free?'Free entry':'Ticketed'}</span></div>`;
     const meta=[ ev.free?'Free entry':(ev.price||'Ticketed'), ev.age, ev.cats ].filter(Boolean).join('   ·   ');
-    $('e-blurb').textContent = meta || 'Event details to come.';
+    const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+    const desc=(ev.desc||'').trim();
+    $('e-blurb').innerHTML = desc
+      ? esc(desc)+(meta?`<div style="color:var(--dim);font-size:12.5px;margin-top:9px;">${meta}</div>`:'')
+      : (meta || 'Event details to come.');
     if(ev.interested&&ev.interested.length){ $('e-fhere-sec').style.display=''; $('e-fhere').innerHTML=`<div class="fhere"><div class="stack">${ev.interested.map(r=>`<div class="mm" style="background:${r[1]}">${r[0]}</div>`).join('')}</div><div class="tt"><b>${ev.interested.map(r=>r[2]).join(', ')}</b> <span>${ev.interested.length>1?'are':'is'} interested</span></div></div>`; } else $('e-fhere-sec').style.display='none';
     $('e-tix').style.display = ev.url? '' : 'none';
     if(ev.source||ev.checked){ $('e-src-sec').style.display='';

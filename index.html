@@ -343,6 +343,7 @@
   .mk.pin .flame svg { width:10px; height:10px; }
   .dvtrend { padding:2px 0 4px; }
   .dvtrend-h { display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--dim); text-transform:uppercase; letter-spacing:.06em; padding:0 18px 9px; }
+  .dvtrend-sub { font-size:11.5px; color:var(--mute); padding:0 18px 9px; margin-top:-4px; font-weight:500; }
   .dvtrend-h svg { width:14px; height:14px; }
   .dvtrend-rail { display:flex; gap:11px; overflow-x:auto; scrollbar-width:none; padding:0 18px 4px; scroll-snap-type:x mandatory; scroll-padding-left:18px; }
   .dvtrend-rail::after { content:''; flex:0 0 7px; }
@@ -532,7 +533,7 @@
         <div class="grab2"></div>
         <div class="dvhead"><div class="dveye">Wednesday · 7:42 PM</div><div class="dvtitle">Live <em>now</em> nearby.</div></div>
         <div class="dvtrend" id="dvvibes-wrap"><div class="dvtrend-h">Browse by vibe</div><div class="chips2" id="dvvibes"></div></div>
-        <div class="dvtrend" id="dvforyou-wrap" style="display:none"><div class="dvtrend-h"><svg viewBox="0 0 24 24" fill="none" stroke="#8a5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.3 6.9H21l-5.4 4 2.1 6.6L12 16.6 6.3 20.5l2.1-6.6-5.4-4h6.7z"/></svg> For you</div><div class="dvtrend-rail" id="dvforyou"></div></div>
+        <div class="dvtrend" id="dvforyou-wrap" style="display:none"><div class="dvtrend-h"><svg viewBox="0 0 24 24" fill="none" stroke="#8a5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.3 6.9H21l-5.4 4 2.1 6.6L12 16.6 6.3 20.5l2.1-6.6-5.4-4h6.7z"/></svg> For you</div><div class="dvtrend-sub" id="dvforyou-sub"></div><div class="dvtrend-rail" id="dvforyou"></div></div>
         <div class="dvtrend"><div class="dvtrend-h"><svg viewBox="0 0 24 24" fill="none" stroke="#e0985a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="15.5 8.5 13.5 13.5 8.5 15.5 10.5 10.5"/></svg> Worth a look</div><div class="dvtrend-rail" id="dvtrend"></div></div>
         <div class="dvseg" id="dvseg"><button class="on" data-seg="now">Now</button><button data-seg="tonight">Tonight</button><button data-seg="weekend">Weekend</button></div>
         <div class="dvfeed" id="dvfeed"></div>
@@ -1475,12 +1476,14 @@
   // ---- the taste loop: log what people do, weighted by intent ----
   const ACT_W={ open:1, video:2, expand:3, save:5, directions:5, post:6, skip:-2 };
   // Local taste profile (per-device) — powers map-pin re-ranking. No network needed.
-  let TASTE={cat:{},type:{},area:{},_seeded:false};
+  let TASTE={cat:{},type:{},area:{},tastes:{},_seeded:false};
   function persistTaste(){ try{ localStorage.setItem('dropit_taste', JSON.stringify(TASTE)); }catch(e){} }
   function bump(o,k,w){ if(!k||!(w>0)) return; o[k]=(o[k]||0)+w; }
-  function tasteLearn(p,w){ if(!p||!(w>0)) return; const cat=p.cat||CAT[p.type]||'food'; bump(TASTE.cat,cat,w); bump(TASTE.type,p.type,w*1.3); bump(TASTE.area,p.area,w*0.6); persistTaste(); }
+  function tasteLearn(p,w){ if(!p||!(w>0)) return; const cat=p.cat||CAT[p.type]||'food'; bump(TASTE.cat,cat,w); bump(TASTE.type,p.type,w*1.3); bump(TASTE.area,p.area,w*0.6);
+    if(!TASTE.tastes) TASTE.tastes={}; if(Array.isArray(p.tastes)) p.tastes.forEach(t=>bump(TASTE.tastes,t,w)); persistTaste(); }
   function loadTaste(){ try{ TASTE=JSON.parse(localStorage.getItem('dropit_taste')||'null'); }catch(e){ TASTE=null; }
-    if(!TASTE||!TASTE.cat){ TASTE={cat:{},type:{},area:{},_seeded:false}; }
+    if(!TASTE||!TASTE.cat){ TASTE={cat:{},type:{},area:{},tastes:{},_seeded:false}; }
+    if(!TASTE.tastes) TASTE.tastes={};
     if(!TASTE._seeded){ Object.values(PLACEINFO).forEach(m=>{ const cat=CAT[m.type]||'food'; bump(TASTE.cat,cat,5); bump(TASTE.type,m.type,6.5); bump(TASTE.area,m.area,3); }); TASTE._seeded=true; persistTaste(); }
   }
   function tasteScorer(){ const mx=m=>{let x=0;for(const k in m)if(m[k]>x)x=m[k];return x;}; const mt=mx(TASTE.type), mc=mx(TASTE.cat), ma=mx(TASTE.area); const has=(mt+mc+ma)>0;
@@ -1497,22 +1500,20 @@
   function loadForYou(){
     const wrap=$('dvforyou-wrap'), rail=$('dvforyou'); if(!wrap||!rail) return;
     if(VIBE){ wrap.style.display='none'; return; }
-    let s,w,n,e;
-    if(mlmap&&mlReady){ const b=mlmap.getBounds(); s=b.getSouth(); w=b.getWest(); n=b.getNorth(); e=b.getEast(); }
-    else { s=HERE.lat-0.02; n=HERE.lat+0.02; w=HERE.lng-0.02; e=HERE.lng+0.02; }
-    fetch(`${SUPA_URL}/rest/v1/rpc/recommend_places`, { method:'POST', headers:SUPA_HEAD,
-      body:JSON.stringify({ p_client_id:CLIENT_ID, p_south:s, p_west:w, p_north:n, p_east:e, p_limit:5 }) })
-      .then(r=>r.ok?r.json():null)
-      .then(rows=>{
-        if(!Array.isArray(rows)||!rows.length){ wrap.style.display='none'; return; }
-        wrap.style.display='';
-        rail.innerHTML=rows.map((r,i)=>{
-          const local=Object.values(places).find(x=>x.name===r.name);
-          const g0=local?local.g[0]:['#2f3a52','#1b2230'];
-          return `<div class="tcard" ${local?`data-id="${local.id}"`:''}><div class="timg gph-target" data-pn="${(r.name||'').replace(/"/g,'&quot;')}" data-pa="${(r.area||'').replace(/"/g,'&quot;')}" data-plat="${local?local.lat:''}" data-plng="${local?local.lng:''}" style="background:${gx(g0)}"><div class="trank">${i+1}</div></div><div class="tnm">${r.name}</div><div class="trow">${r.type||''}${r.area?' · '+r.area:''}</div></div>`;
-        }).join('');
-        hydrateDiscoverPhotos();
-      }).catch(()=>{ wrap.style.display='none'; });
+    const prof=(TASTE&&TASTE.tastes)||{}; const pk=Object.keys(prof);
+    const profMax=pk.reduce((m,k)=>Math.max(m,prof[k]),0), profTotal=pk.reduce((a,k)=>a+prof[k],0);
+    if(pk.length<3 || profTotal<4){ wrap.style.display='none'; return; }   // cold start — no fake personalization until real engagement
+    const fy=p=>{ const q=(p.fsqRating!=null)?clamp01(p.fsqRating/10):0.45, prox=Math.exp(-(parseFloat(p.dist)||3)/2), ind=p.chain?0.6:1;
+      let s=0; const ts=p.tastes||[]; for(const t of ts){ if(prof[t]) s+=prof[t]; } const overlap=clamp01(s/(profMax*3));
+      return (overlap*1.7 + q*0.6 + prox*0.45 + (p.pick?0.4:0))*ind; };
+    const top=Object.values(places)
+      .filter(p=> p.id!==currentPlaceId && p.tastes && p.tastes.length && p.tastes.some(t=>prof[t]))
+      .map(p=>({p,s:fy(p)})).sort((a,b)=>b.s-a.s).slice(0,6).map(x=>x.p);
+    if(!top.length){ wrap.style.display='none'; return; }
+    wrap.style.display='';
+    const sub=$('dvforyou-sub'); if(sub) sub.textContent='Based on the places you keep opening';
+    rail.innerHTML=top.map((p,i)=>`<div class="tcard" data-id="${p.id}"><div class="timg gph-target" data-pn="${(p.name||'').replace(/"/g,'&quot;')}" data-pa="${(p.area||'').replace(/"/g,'&quot;')}" data-plat="${p.lat}" data-plng="${p.lng}" style="background:${gx(p.g[0])}"><div class="trank">${i+1}</div></div><div class="tnm">${p.name}</div><div class="trow">${p.pick?'<span style="color:#34d399;font-weight:700;">◆ Local pick</span>':`${p.type}${p.area?' · '+p.area:''}`}</div></div>`).join('');
+    hydrateDiscoverPhotos();
   }
 
   // ================= Lists (custom, per-device, private) =================

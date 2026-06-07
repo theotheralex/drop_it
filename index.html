@@ -169,7 +169,7 @@
   .sheet.on { transform:translateY(0); }
   .sheet-handle { padding:15px 0 13px; touch-action:none; cursor:grab; }
   .grab2 { width:38px; height:4px; border-radius:999px; background:var(--mute); margin:0 auto 4px; }
-  .sphotos { display:flex; gap:6px; padding:8px 14px; overflow-x:auto; scrollbar-width:none; touch-action:pan-x; scroll-snap-type:x mandatory; }
+  .sphotos { display:flex; gap:6px; padding:8px 14px; overflow-x:auto; scrollbar-width:none; touch-action:pan-x; scroll-snap-type:x mandatory; overflow-anchor:none; }
   .sphotos::-webkit-scrollbar { display:none; }
   .sphotos .sp { width:160px; height:108px; border-radius:14px; flex-shrink:0; position:relative; background-size:cover; background-position:center; scroll-snap-align:start; }
   .sphotos .sp .pill { position:absolute; left:8px; bottom:8px; font-size:9px; font-weight:700; background:rgba(0,0,0,.55); padding:3px 7px; border-radius:999px; display:flex; align-items:center; gap:4px; }
@@ -1070,7 +1070,7 @@
     if(!e || !e.ok){ $('s-google').style.display='none'; return; }
     // photos — prepend up to 4 real Google photos to the strip
     const photos = (e.photos && e.photos.length) ? e.photos : (e.photoUri?[e.photoUri]:[]);
-    if(photos.length){ const ph=$('sphotos'); if(ph && !ph.querySelector('.gphoto')) ph.insertAdjacentHTML('afterbegin', photos.map((u,i)=>`<div class="sp gphoto" style="background-image:url('${u}')">${i===0?'<span class="pill">'+GLOGO+'Google</span>':''}</div>`).join('')); }
+    if(photos.length){ const ph=$('sphotos'); if(ph && !ph.querySelector('.gphoto')){ ph.insertAdjacentHTML('afterbegin', photos.map((u,i)=>`<div class="sp gphoto" style="background-image:url('${u}')">${i===0?'<span class="pill">'+GLOGO+'Google</span>':''}</div>`).join('')); ph.scrollLeft=0; requestAnimationFrame(()=>{ ph.scrollLeft=0; }); } }
     // hours card (collapsed by default) — replaces the raw OSM line
     const hc=buildHoursCard(e);
     if(hc){ const h=$('s-hours'); h.innerHTML=hc; h.classList.add('collapsed'); h.style.display='block'; $('s-status').style.display='none'; }

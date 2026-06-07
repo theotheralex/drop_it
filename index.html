@@ -326,6 +326,12 @@
   .tcard .tnm { font-size:12.5px; font-weight:650; margin-top:7px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .tcard .trow { font-size:11px; color:var(--mute); margin-top:2px; display:flex; align-items:center; gap:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .tcard .trow .star { color:var(--amber); }
+  /* Discover card Google photos */
+  .gph-target .gph { position:absolute; inset:0; background-size:cover; background-position:center; border-radius:inherit; opacity:0; transition:opacity .4s ease; z-index:1; }
+  .gph-target .gph.in { opacity:1; }
+  .tcard .trank, .tcard .tflame, .ev .evpill { z-index:2; }
+  .gpill { position:absolute; left:7px; bottom:7px; z-index:2; display:flex; align-items:center; gap:4px; background:rgba(8,11,18,.72); backdrop-filter:blur(4px); color:#fff; font-size:9px; font-weight:600; padding:2px 6px; border-radius:999px; }
+  .gpill svg { width:10px; height:10px; }
   /* ---- map style modes ---- */
   body.m-light #mlmap, body.m-light #map { background:#f3efe6; }
   body.m-light .mk.pin .lbl { background:#fff; color:#2a251d; border:1px solid rgba(38,32,22,.10); box-shadow:0 2px 7px rgba(40,33,20,.16); }
@@ -464,6 +470,7 @@
             <div class="chip on" data-f="all">All</div>
             <div class="chip chip-ev" data-f="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/></svg>Events</div>
             <div class="chip" data-f="food"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="3" x2="7" y2="21"/><path d="M5 3v4a2 2 0 0 0 4 0V3"/><path d="M16 3c-1.6 0-2.6 2-2.6 4.5S14.4 11 16 11v10"/></svg>Food</div>
+            <div class="chip" data-f="cafe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h11v4a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5V8z"/><path d="M16 9h2a2.5 2.5 0 0 1 0 5h-2"/><path d="M7 2v2.2M11 2v2.2"/></svg>Cafés</div>
             <div class="chip" data-f="drinks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14l-7 8-7-8z"/><line x1="12" y1="12" x2="12" y2="20"/><line x1="8" y1="20" x2="16" y2="20"/></svg>Drinks</div>
             <div class="chip" data-f="outdoors"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 13h5l-3 5h12l-3-5h5L12 2z"/><line x1="12" y1="18" x2="12" y2="22"/></svg>Outdoors</div>
             <div class="chip" data-f="live">● Live</div>
@@ -690,8 +697,8 @@
 
   const TACO = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M3 11 Q3 19 12 19 Q21 19 21 11"/><path d="M3 11 Q6 6 9 10 Q12 5 15 10 Q18 6 21 11"/></svg>';
   const ICON = { 'Taquería':'TACO','Mexican':'TACO','Pizza':'pizza','Mediterranean':'salad','Turkish':'soup','Cocktail bar':'martini','Natural wine':'grape','Wine bar':'wine','Irish pub':'beer','Coffee':'coffee','Live music':'music','Venue':'mic','Club':'headphones','Park':'trees','American':'sandwich','Indian':'cooking-pot','Bakery':'croissant','Restaurant':'utensils' };
-  const CAT = { 'Taquería':'food','Mexican':'food','Pizza':'food','Mediterranean':'food','Turkish':'food','Cocktail bar':'drinks','Natural wine':'drinks','Wine bar':'drinks','Irish pub':'drinks','Coffee':'drinks','Live music':'music','Venue':'music','Club':'music','Park':'outdoors','American':'food','Indian':'food','Bakery':'food','Restaurant':'food' };
-  const BAND = { food:{h:6,hr:36,s:78,l:54}, drinks:{h:33,hr:20,s:82,l:55}, outdoors:{h:150,hr:30,s:46,l:46}, music:{h:262,hr:42,s:54,l:60} };
+  const CAT = { 'Taquería':'food','Mexican':'food','Pizza':'food','Mediterranean':'food','Turkish':'food','Cocktail bar':'drinks','Natural wine':'drinks','Wine bar':'drinks','Irish pub':'drinks','Coffee':'cafe','Live music':'music','Venue':'music','Club':'music','Park':'outdoors','American':'food','Indian':'food','Bakery':'food','Restaurant':'food' };
+  const BAND = { food:{h:6,hr:36,s:78,l:54}, cafe:{h:28,hr:6,s:44,l:42}, drinks:{h:33,hr:20,s:82,l:55}, outdoors:{h:150,hr:30,s:46,l:46}, music:{h:262,hr:42,s:54,l:60} };
   const GRP = { 'Taquería':'mex','Mexican':'mex','Pizza':'pizza','Mediterranean':'med','Turkish':'med','Cocktail bar':'cocktail','Natural wine':'wine','Wine bar':'wine','Irish pub':'beer','Coffee':'coffee','Live music':'music','Venue':'venue','Club':'venue','Park':'park','American':'american','Indian':'indian','Bakery':'bakery','Restaurant':'rest' };
   const BLURB = {
     mex:["Mission burritos done right — go hungry, leave happy.","Counter service, big portions, a salsa bar worth a second trip.","Late-night fuel the neighborhood swears by."],
@@ -863,7 +870,7 @@
       lmPlacedArr.push({x:sx,y:sy}); lmPlaced++;
       let lbl=''; const w=14+l.name.length*5.4, r={x:sx-w/2,y:sy+14,w,h:15};
       if(!pLabels.some(q=>!(r.x+r.w<q.x||r.x>q.x+q.w||r.y+r.h<q.y||r.y>q.y+q.h))){ pLabels.push(r); lbl=`<div class="lmlabel">${l.name}</div>`; }
-      html+=`<div class="mk lm" data-lm="1" data-lmname="${(l.name||'').replace(/"/g,'&quot;')}" data-lmtype="${l.t||''}" data-lmarea="${(l.area||'').replace(/"/g,'&quot;')}" data-lng="${l.lng}" data-lat="${l.lat}" style="left:${sx}px;top:${sy}px"><div class="lmchip" style="color:${LM_C[l.t]||'#9aa3b2'}">${l.icon}</div>${lbl}</div>`;
+      html+=`<div class="mk lm" data-lm="1" data-lmname="${(l.name||'').replace(/"/g,'&quot;')}" data-lmtype="${l.t||''}" data-lmarea="${(l.area||'').replace(/"/g,'&quot;')}" data-lng="${l.lng}" data-lat="${l.lat}" style="left:${sx}px;top:${sy}px"><div class="lmchip" style="color:${LM_C[l.k||l.t]||'#9aa3b2'}">${l.icon}</div>${lbl}</div>`;
     }
     if(FILTER!=='events'){
     // --- Layer 2: food/drink density budget. Held back when zoomed out so landmarks lead. ---
@@ -915,11 +922,12 @@
   }
   const STYLE_DARK='https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
   const STYLE_LIGHT='https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
-  const LM_TREE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 13h5l-3 5h12l-3-5h5L12 2z"/><line x1="12" y1="18" x2="12" y2="22"/></svg>';
-  const LM_BLDG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V8l7-5 7 5v13"/><path d="M9.5 21v-6h5v6"/></svg>';
-  const LM_TRAIN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="14" rx="3"/><path d="M6 11h12"/><line x1="9" y1="20" x2="7.3" y2="22"/><line x1="15" y1="20" x2="16.7" y2="22"/></svg>';
-  const LM_ART='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-5-4-7 7"/></svg>';
-  const LM_C={ transit:'#5b9bff', park:'#46b06a', civic:'#d8a24a', mural:'#b46cf0' };
+  const LM_TREE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l5 7h-3l4 6H6l4-6H7l5-7z"/><path d="M12 15v6"/></svg>';
+  const LM_BLDG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h18L12 4 3 10z"/><path d="M5 10v8M9 10v8M15 10v8M19 10v8"/><path d="M4 21h16"/></svg>';
+  const LM_TRAIN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="14" rx="3.5"/><path d="M5 11h14"/><circle cx="8.7" cy="14" r=".6"/><circle cx="15.3" cy="14" r=".6"/><path d="M8 20l-1.4 2M16 20l1.4 2"/></svg>';
+  const LM_ART='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.6-.8 1.6-1.7 0-.9-.6-1.5-.6-2.1 0-.8.7-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4-4-7.7-9-7.7z"/><circle cx="8" cy="11" r="1"/><circle cx="11" cy="7.5" r="1"/><circle cx="15" cy="9" r="1"/></svg>';
+  const LM_BOOK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10.4 5.3 8.2 4.8 6 5.3c-.6.1-1 .6-1 1.2v10.3c0 .8.7 1.3 1.4 1.1 2-.4 4 .1 5.6 1.3"/><path d="M12 6.5c1.6-1.2 3.8-1.7 6-1.2.6.1 1 .6 1 1.2v10.3c0 .8-.7 1.3-1.4 1.1-2-.4-4 .1-5.6 1.3"/><path d="M12 6.5V20.3"/></svg>';
+  const LM_C={ transit:'#5b9bff', park:'#46b06a', civic:'#d8a24a', mural:'#b46cf0', library:'#19a89a' };
   const LM=[
     {name:'16th St BART', lat:37.7649, lng:-122.4197, t:'transit', icon:LM_TRAIN},
     {name:'24th St BART', lat:37.7524, lng:-122.4181, t:'transit', icon:LM_TRAIN},
@@ -932,8 +940,8 @@
     {name:'Clarion Alley', lat:37.7626, lng:-122.4205, t:'mural', icon:LM_ART},
     {name:'Balmy Alley', lat:37.7510, lng:-122.4128, t:'mural', icon:LM_ART}
   ];
-  const LM_ICON={ transit:LM_TRAIN, park:LM_TREE, civic:LM_BLDG, mural:LM_ART };
-  let LMK = LM.map(l=>({...l, pop:5}));   // seeded with the Mission set until Bay-wide landmarks load
+  const LM_ICON={ transit:LM_TRAIN, park:LM_TREE, civic:LM_BLDG, mural:LM_ART, library:LM_BOOK };
+  let LMK = LM.map(l=>{ const k=lmKind(l.name,l.t); return {...l, k, icon:LM_ICON[k]||LM_BLDG, pop:5}; });   // seeded with the Mission set until Bay-wide landmarks load
   let MAPMODE='dark'; try{ const _t=localStorage.getItem('dropit_theme'); if(_t==='light'||_t==='dark') MAPMODE=_t; }catch(e){}
   function initMap(){
     mlmap=new maplibregl.Map({ container:'mlmap', style:(MAPMODE==='light'?STYLE_LIGHT:STYLE_DARK), center:[HERE.lng,HERE.lat], zoom:START_Z, attributionControl:false, dragRotate:false, pitchWithRotate:false });
@@ -966,8 +974,31 @@
   let dvmap=null;
   function renderDv(){ if(!dvmap) return; const live=Object.values(places).filter(p=>p.live); $('dvdots').innerHTML=live.map(p=>{ const s=dvmap.project([p.lng,p.lat]); return `<div class="dvdot" style="left:${s.x}px;top:${s.y}px;color:${p.dot}"><div class="r"></div><div class="b" style="background:${p.fill}"></div></div>`; }).join(''); }
   function initDvMap(){ if(dvmap){ dvmap.resize(); renderDv(); return; } dvmap=new maplibregl.Map({ container:'dvmlmap', style:(MAPMODE==='light'?STYLE_LIGHT:STYLE_DARK), center:[HERE.lng,HERE.lat], zoom:13.9, interactive:false, attributionControl:false }); dvmap.on('load',()=>{ dvmap.resize(); renderDv(); }); }
-  function renderTrending(){ const rail=$('dvtrend'); if(!rail) return; const top=TRENDING.slice(0,10);
-    rail.innerHTML=top.map((p,i)=>`<div class="tcard" data-id="${p.id}"><div class="timg" style="background:${gx(p.g[0])}"><div class="trank">${i+1}</div>${i<3?`<div class="tflame">${FLAME_SVG}</div>`:''}</div><div class="tnm">${p.name}</div><div class="trow">${p.rated?('<span class="star">★</span>'+p.stars):'<span style="color:var(--mute)">New</span>'}<span>·</span>${p.live?p.buslevel:(p.area||p.type)}</div></div>`).join('');
+  // ---- Discover card photos (Google, on-demand, lazy, session-cached). Flip DISC_PHOTOS=false to disable. ----
+  const DISC_PHOTOS=true;
+  const PHOTOC={};                         // key "name|area" -> photo URL or null (no match). NOT persisted.
+  const GLOGO_PILL='<svg width="11" height="11" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>';
+  let _phObs=null;
+  function hydrateDiscoverPhotos(){
+    if(!DISC_PHOTOS || typeof IntersectionObserver==='undefined') return;
+    if(!_phObs) _phObs=new IntersectionObserver((ents,obs)=>{ ents.forEach(en=>{ if(en.isIntersecting){ obs.unobserve(en.target); fillCardPhoto(en.target); } }); },{rootMargin:'150px'});
+    document.querySelectorAll('.gph-target:not([data-phd])').forEach(el=>{ el.setAttribute('data-phd','1'); _phObs.observe(el); });
+  }
+  function fillCardPhoto(el){
+    const name=el.dataset.pn; if(!name) return;
+    const area=el.dataset.pa||'', lat=el.dataset.plat||'', lng=el.dataset.plng||'';
+    const key=(name+'|'+area).toLowerCase();
+    const apply=u=>{ if(!u||el.querySelector('.gph')) return; const g=document.createElement('div'); g.className='gph'; g.style.backgroundImage=`url('${u}')`; el.appendChild(g); requestAnimationFrame(()=>g.classList.add('in')); el.insertAdjacentHTML('beforeend',`<span class="gpill">${GLOGO_PILL}Google</span>`); };
+    if(key in PHOTOC){ apply(PHOTOC[key]); return; }
+    const q=`light=1&name=${encodeURIComponent(name)}&area=${encodeURIComponent(area)}`+(lat&&lng?`&lat=${lat}&lng=${lng}`:'');
+    fetch(`${SUPA_URL}/functions/v1/place-enrich?${q}`,{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}})
+      .then(r=>r.ok?r.json():null)
+      .then(e=>{ const u=(e&&e.ok&&e.photo)?e.photo:null; PHOTOC[key]=u; apply(u); })
+      .catch(()=>{ PHOTOC[key]=null; });
+  }
+  function renderTrending(){ const rail=$('dvtrend'); if(!rail) return; const top=TRENDING.slice(0,5);
+    rail.innerHTML=top.map((p,i)=>`<div class="tcard" data-id="${p.id}"><div class="timg gph-target" data-pn="${(p.name||'').replace(/"/g,'&quot;')}" data-pa="${(p.area||'').replace(/"/g,'&quot;')}" data-plat="${p.lat}" data-plng="${p.lng}" style="background:${gx(p.g[0])}"><div class="trank">${i+1}</div>${i<3?`<div class="tflame">${FLAME_SVG}</div>`:''}</div><div class="tnm">${p.name}</div><div class="trow">${p.rated?('<span class="star">★</span>'+p.stars):'<span style="color:var(--mute)">New</span>'}<span>·</span>${p.live?p.buslevel:(p.area||p.type)}</div></div>`).join('');
+    hydrateDiscoverPhotos();
   }
   function eventsForSeg(seg){
     const now=Date.now(); const list=Object.values(EVENTS).filter(ev=>ev.start && !isNaN(ev.startMs));
@@ -1000,12 +1031,13 @@
     else if(seg==='tonight') list=list.filter(([id,p])=>['drinks','music'].includes(p.cat));
     else list=list.filter(([id,p])=>['outdoors','food'].includes(p.cat));
     list.sort((a,b)=>(b[1].live-a[1].live)||((+b[1].stars||0)-(+a[1].stars||0))||(b[1].pop-a[1].pop));
-    list=list.slice(0,16);
+    list=list.slice(0,5);
     const plHTML = list.map(([id,p])=>{ const fh=p.fhere.length;
-      return `<div class="ev" data-id="${id}"><div class="evimg" style="background:${gx(p.g[0])}"><div class="evpill">${p.live?'<span class="ld"></span>LIVE · '+p.posts:(p.rated?(p.posts+' posts this wk'):(p.area||p.type))}</div></div><div class="evbody"><div class="evnm">${p.name}</div><div class="evrow">${p.rated?('<span class="star">★</span> '+p.stars+' <span class="dot">·</span> '):''}${p.dist} <span class="dot">·</span> ${p.walk} walk</div>${fh?`<div class="evrow"><span class="going">${fh} friend${fh>1?'s':''} here</span></div>`:''}</div></div>`;
+      return `<div class="ev" data-id="${id}"><div class="evimg gph-target" data-pn="${(p.name||'').replace(/"/g,'&quot;')}" data-pa="${(p.area||'').replace(/"/g,'&quot;')}" data-plat="${p.lat}" data-plng="${p.lng}" style="background:${gx(p.g[0])}"><div class="evpill">${p.live?'<span class="ld"></span>LIVE · '+p.posts:(p.rated?(p.posts+' posts this wk'):(p.area||p.type))}</div></div><div class="evbody"><div class="evnm">${p.name}</div><div class="evrow">${p.rated?('<span class="star">★</span> '+p.stars+' <span class="dot">·</span> '):''}${p.dist} <span class="dot">·</span> ${p.walk} walk</div>${fh?`<div class="evrow"><span class="going">${fh} friend${fh>1?'s':''} here</span></div>`:''}</div></div>`;
     }).join('');
     const plLabel = (evHTML && plHTML) ? `<div class="feedlabel pl-l">${seg==='now'?'Open now':'Places nearby'}</div>` : '';
     $('dvfeed').innerHTML = (evHTML + plLabel + plHTML) || '<div style="color:var(--mute);padding:20px 4px;font-size:13px;">Nothing in this window right now — check another tab.</div>';
+    hydrateDiscoverPhotos();
   }
   document.querySelectorAll('#dvseg button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#dvseg button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); curSeg=b.dataset.seg; discoverFeed(b.dataset.seg); });
   $('dvfeed').addEventListener('click',e=>{ const c=e.target.closest('.ev'); if(!c)return; if(c.dataset.ev) openEvent(c.dataset.ev); else if(c.dataset.id) openPlace(c.dataset.id); });
@@ -1372,7 +1404,7 @@
     if(mlmap&&mlReady){ const b=mlmap.getBounds(); s=b.getSouth(); w=b.getWest(); n=b.getNorth(); e=b.getEast(); }
     else { s=HERE.lat-0.02; n=HERE.lat+0.02; w=HERE.lng-0.02; e=HERE.lng+0.02; }
     fetch(`${SUPA_URL}/rest/v1/rpc/recommend_places`, { method:'POST', headers:SUPA_HEAD,
-      body:JSON.stringify({ p_client_id:CLIENT_ID, p_south:s, p_west:w, p_north:n, p_east:e, p_limit:12 }) })
+      body:JSON.stringify({ p_client_id:CLIENT_ID, p_south:s, p_west:w, p_north:n, p_east:e, p_limit:5 }) })
       .then(r=>r.ok?r.json():null)
       .then(rows=>{
         if(!Array.isArray(rows)||!rows.length){ wrap.style.display='none'; return; }
@@ -1380,8 +1412,9 @@
         rail.innerHTML=rows.map((r,i)=>{
           const local=Object.values(places).find(x=>x.name===r.name);
           const g0=local?local.g[0]:['#2f3a52','#1b2230'];
-          return `<div class="tcard" ${local?`data-id="${local.id}"`:''}><div class="timg" style="background:${gx(g0)}"><div class="trank">${i+1}</div></div><div class="tnm">${r.name}</div><div class="trow">${r.type||''}${r.area?' · '+r.area:''}</div></div>`;
+          return `<div class="tcard" ${local?`data-id="${local.id}"`:''}><div class="timg gph-target" data-pn="${(r.name||'').replace(/"/g,'&quot;')}" data-pa="${(r.area||'').replace(/"/g,'&quot;')}" data-plat="${local?local.lat:''}" data-plng="${local?local.lng:''}" style="background:${gx(g0)}"><div class="trank">${i+1}</div></div><div class="tnm">${r.name}</div><div class="trow">${r.type||''}${r.area?' · '+r.area:''}</div></div>`;
         }).join('');
+        hydrateDiscoverPhotos();
       }).catch(()=>{ wrap.style.display='none'; });
   }
 
@@ -1572,7 +1605,7 @@
       +`&lat=gte.${s}&lat=lte.${n}&lng=gte.${w}&lng=lte.${e}&order=pop.desc&limit=80`;
     fetch(url,{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}})
       .then(r=>r.ok?r.json():null)
-      .then(rows=>{ if(Array.isArray(rows)&&rows.length){ LMK=rows.map(l=>({name:l.name,lat:l.lat,lng:l.lng,t:l.type,area:l.area||'',pop:l.pop||0,icon:LM_ICON[l.type]||LM_BLDG})); render(); } })
+      .then(rows=>{ if(Array.isArray(rows)&&rows.length){ LMK=rows.map(l=>{ const k=lmKind(l.name,l.type); return {name:l.name,lat:l.lat,lng:l.lng,t:l.type,k,area:l.area||'',pop:l.pop||0,icon:LM_ICON[k]||LM_BLDG}; }); render(); } })
       .catch(()=>{});
   }
   function scheduleViewport(){ clearTimeout(vpTimer); vpTimer=setTimeout(()=>{ fetchViewport(); fetchLandmarks(); fetchEvents(); },450); }

@@ -854,7 +854,7 @@
     let tscore= (rated?st*1.1:0) + Math.log10((rated?rc:0)+1)*0.7 + (live?1.5:0) + busyPct*1.4 + Math.min(1.2,posts/150) + pop*0.45;
     if(chain) tscore -= 2.4;   // let independents lead the density budget
     places[id]={ id,name,type,cat,icon:ICON[type]||'utensils',live, chain, tastes, busy:(rated&&live)? Math.min(1, posts/150) : 0,
-      rated, pop, area:loc, hours:hint, website:r.website||'',
+      rated, pop, area:loc, hours:hint, fsqHours:(r.fsq_hours||null), popHours:(r.fsq_popular_hours||null), website:r.website||'',
       stars: rated? st.toFixed(1) : null, rev: rated? rc.toLocaleString() : null,
       catLabel: loc? `${type} · ${loc}` : type, dist:dmi.toFixed(1)+' mi', open:(live?'● Open now · ':'● ')+hint,
       walk:Math.max(1,Math.round(dmi*20))+' min', drive:Math.max(1,Math.round(dmi*5))+' min', transit:Math.max(2,Math.round(dmi*14))+' min',
@@ -1077,6 +1077,22 @@
   let VIBE = null;
   function vibeMatch(p){ if(!VIBE) return true; const ks=VIBES_MAP[VIBE]||[], ts=p.tastes||[]; return ts.some(t=>ks.some(k=>t.indexOf(k)>=0)); }
   function renderVibes(){ const rail=$('dvvibes'); if(!rail) return; rail.innerHTML=VIBE_KEYS.map((v,i)=>`<div class="chip vibe${v===VIBE?' on':''}" data-vi="${i}">${v}</div>`).join(''); }
+  // ---- Occasion engine: real open/busy state from stored schedules (computed live; stored open_now is point-in-time). ----
+  function hhmm(s){ const v=parseInt((''+s).replace('+',''),10); return isNaN(v)?null:(Math.floor(v/100)*60+(v%100)); }
+  function inWindows(ws, day, minute){ if(!Array.isArray(ws)||!ws.length) return false; const prev=(day===1?7:day-1);
+    for(const e of ws){ const o=hhmm(e.open), c=hhmm(e.close); if(o==null||c==null) continue; const ov=((''+e.close).indexOf('+')>=0)||c<=o;
+      if(e.day===day && (ov ? minute>=o : (minute>=o && minute<c))) return true;
+      if(e.day===prev && ov && minute<c) return true; }
+    return false; }
+  function nowDM(){ const d=new Date(), jd=d.getDay(); return { day:(jd===0?7:jd), min:d.getHours()*60+d.getMinutes() }; }
+  function regOf(p){ return (p.fsqHours && p.fsqHours.regular) || null; }
+  function isOpenNow(p){ const reg=regOf(p); if(!Array.isArray(reg)||!reg.length) return null; const t=nowDM(); return inWindows(reg,t.day,t.min); }
+  function openAt(p,day,minute){ const reg=regOf(p); if(!Array.isArray(reg)||!reg.length) return null; return inWindows(reg,day,minute); }
+  function openOnWeekend(p){ const reg=regOf(p); if(!Array.isArray(reg)||!reg.length) return null; return reg.some(e=>e.day===6||e.day===7); }
+  function popWindows(p){ return Array.isArray(p.popHours)?p.popHours:[]; }
+  function peakNow(p){ const t=nowDM(); return inWindows(popWindows(p),t.day,t.min); }                         // genuinely busy right now
+  function eveningChar(p){ const w=popWindows(p); if(w.length) return w.some(e=>{ const o=hhmm(e.open); return o!=null && (o>=17*60 || (''+e.close).indexOf('+')>=0); }); return ['drinks','music'].includes(p.cat); }
+  function daytimeChar(p){ const w=popWindows(p); if(w.length) return w.some(e=>{ const o=hhmm(e.open); return o!=null && o>=8*60 && o<=14*60; }); return ['outdoors','food'].includes(p.cat); }
   function renderTrending(){ const rail=$('dvtrend'); if(!rail) return;
     const top=Object.values(places).filter(vibeMatch).map(p=>{ const q=(p.fsqRating!=null)?clamp01(p.fsqRating/10):0.45, ind=p.chain?0.5:1, prox=Math.exp(-(parseFloat(p.dist)||3)/2); return {p,s:q*ind*prox}; }).sort((a,b)=>b.s-a.s).slice(0,5).map(x=>x.p);
     rail.innerHTML=top.map((p,i)=>`<div class="tcard" data-id="${p.id}"><div class="timg gph-target" data-pn="${(p.name||'').replace(/"/g,'&quot;')}" data-pa="${(p.area||'').replace(/"/g,'&quot;')}" data-plat="${p.lat}" data-plng="${p.lng}" style="background:${gx(p.g[0])}"><div class="trank">${i+1}</div></div><div class="tnm">${p.name}</div><div class="trow">${p.pick?'<span style="color:#34d399;font-weight:700;">◆ Local pick</span>':`${p.type}${p.area?' · '+p.area:''}`}</div></div>`).join('');
@@ -1104,21 +1120,28 @@
   }
   function discoverFeed(seg){
     renderTrending();
+    { const ttl=document.querySelector('.dvtitle'), eyb=document.querySelector('.dveye');
+      if(eyb){ const d=new Date(), DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'], hr=d.getHours(), ap=hr<12?'AM':'PM', h12=hr%12||12, mm=(''+d.getMinutes()).padStart(2,'0'); eyb.textContent=DAYS[d.getDay()]+' · '+h12+':'+mm+' '+ap; }
+      if(ttl){ ttl.innerHTML = seg==='tonight' ? 'Make a <em>night</em> of it.' : seg==='weekend' ? '<em>Weekend</em> worthy.' : 'The move, <em>right now</em>.'; } }
     const evs=eventsForSeg(seg);
     let evHTML='';
     if(evs.length){ const lab = seg==='now'?'Events happening now' : seg==='tonight'?'Events tonight' : 'Events this weekend';
       evHTML = `<div class="feedlabel ev-l">${EV_TIX_OUTLINE}${lab}</div>` + evs.map(evFeedCard).join(''); }
+    const t=nowDM();
     let list=Object.entries(places);
-    if(seg==='now') list=list.filter(([id,p])=>p.live);
-    else if(seg==='tonight') list=list.filter(([id,p])=>['drinks','music'].includes(p.cat));
-    else list=list.filter(([id,p])=>['outdoors','food'].includes(p.cat));
+    if(seg==='now') list=list.filter(([id,p])=>{ const o=isOpenNow(p); return o===true || (o===null && p.live); });
+    else if(seg==='tonight') list=list.filter(([id,p])=>{ const o=openAt(p,t.day,20*60); return o===true || (o===null && ['drinks','music'].includes(p.cat)); });
+    else { list=list.filter(([id,p])=>{ const o=openOnWeekend(p); return o===true || (o===null && ['outdoors','food'].includes(p.cat)); }); }
     if(VIBE) list=list.filter(([id,p])=>vibeMatch(p));
-    list.sort((a,b)=>(b[1].live-a[1].live)||((+b[1].stars||0)-(+a[1].stars||0))||(b[1].pop-a[1].pop));
-    list=list.slice(0,5);
+    const segScore=([id,p])=>{ const q=(p.fsqRating!=null)?clamp01(p.fsqRating/10):0.45, prox=Math.exp(-(parseFloat(p.dist)||3)/2), ind=p.chain?0.6:1;
+      let b=0; if(seg==='now') b=peakNow(p)?0.5:0; else if(seg==='tonight') b=eveningChar(p)?0.45:0; else b=daytimeChar(p)?0.45:0;
+      return (q*1.0 + prox*0.5 + b + (p.pick?0.35:0))*ind; };
+    list.sort((a,b)=>segScore(b)-segScore(a));
+    list=list.slice(0,6);
     const plHTML = list.map(([id,p])=>{ const fh=p.fhere.length;
       return `<div class="ev" data-id="${id}"><div class="evimg gph-target" data-pn="${(p.name||'').replace(/"/g,'&quot;')}" data-pa="${(p.area||'').replace(/"/g,'&quot;')}" data-plat="${p.lat}" data-plng="${p.lng}" style="background:${gx(p.g[0])}"><div class="evpill">${p.live?'<span class="ld"></span>LIVE · '+p.posts:(p.rated?(p.posts+' posts this wk'):(p.area||p.type))}</div></div><div class="evbody"><div class="evnm">${p.name}</div><div class="evrow">${p.rated?('<span class="star">★</span> '+p.stars+' <span class="dot">·</span> '):''}${p.dist} <span class="dot">·</span> ${p.walk} walk</div>${fh?`<div class="evrow"><span class="going">${fh} friend${fh>1?'s':''} here</span></div>`:''}</div></div>`;
     }).join('');
-    const plLabel = (evHTML && plHTML) ? `<div class="feedlabel pl-l">${seg==='now'?'Open now':'Places nearby'}</div>` : '';
+    const plLabel = (evHTML && plHTML) ? `<div class="feedlabel pl-l">${seg==='now'?'Open now':seg==='tonight'?'Open tonight':'Open this weekend'}</div>` : '';
     $('dvfeed').innerHTML = (evHTML + plLabel + plHTML) || '<div style="color:var(--mute);padding:20px 4px;font-size:13px;">Nothing in this window right now — check another tab.</div>';
     hydrateDiscoverPhotos();
   }
@@ -1686,7 +1709,7 @@
     const b=mlmap.getBounds();
     const s=b.getSouth().toFixed(4), w=b.getWest().toFixed(4), n=b.getNorth().toFixed(4), e=b.getEast().toFixed(4);
     const key=`${s},${w},${n},${e}`; if(key===vpLast) return; vpLast=key;
-    const url=`${SUPA_URL}/rest/v1/places?select=name,type,lat,lng,area,hours,website,pop,stars,ratings,osm_id,fsq_rating,fsq_pop,fsq_id,fsq_is_chain,fsq_tastes`
+    const url=`${SUPA_URL}/rest/v1/places?select=name,type,lat,lng,area,hours,website,pop,stars,ratings,osm_id,fsq_rating,fsq_pop,fsq_id,fsq_is_chain,fsq_tastes,fsq_hours,fsq_popular_hours`
       +`&lat=gte.${s}&lat=lte.${n}&lng=gte.${w}&lng=lte.${e}&order=pop.desc&limit=300`;
     fetch(url,{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}})
       .then(r=>r.ok?r.json():null)

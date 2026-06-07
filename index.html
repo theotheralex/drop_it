@@ -192,6 +192,18 @@
   .sgoogle .gdot { color:var(--mute); }
   .sgoogle a { color:var(--coral-2); font-weight:600; text-decoration:none; white-space:nowrap; }
   .sgoogle .gattr { width:100%; font-size:10px; color:var(--mute); margin-top:1px; }
+  .hours { margin-top:13px; border:1px solid var(--line); border-radius:15px; overflow:hidden; background:var(--surface); }
+  .hours-head { display:flex; align-items:center; gap:10px; padding:12px 14px; cursor:pointer; }
+  .hours-head .ic { width:30px; height:30px; border-radius:9px; background:rgba(255,181,71,.12); display:flex; align-items:center; justify-content:center; color:var(--amber); flex-shrink:0; }
+  .hours-head .st { font-weight:700; font-size:14px; } .hours-head .st.open { color:var(--green); } .hours-head .st.closed { color:var(--coral-2); }
+  .hours-head .nx { color:var(--dim); font-size:12.5px; }
+  .hours-head .chev { margin-left:auto; color:var(--mute); transition:transform .2s; }
+  .hours:not(.collapsed) .hours-head .chev { transform:rotate(180deg); }
+  .hours.collapsed .hours-week { display:none; }
+  .hours-week { border-top:1px solid var(--line); padding:6px 14px 10px; }
+  .hrow { display:flex; justify-content:space-between; padding:6px 0; font-size:13px; }
+  .hrow .d { color:var(--dim); } .hrow .t { color:var(--text); opacity:.82; font-variant-numeric:tabular-nums; }
+  .hrow.today { font-weight:700; } .hrow.today .d { color:var(--coral-2); } .hrow.today .t { color:var(--text); opacity:1; }
   .etas { display:flex; gap:8px; margin-top:14px; }
   .eta { flex:1; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:11px; text-align:center; }
   .eta .t { font-weight:700; font-size:15px; } .eta .m { color:var(--mute); font-size:10.5px; margin-top:2px; text-transform:uppercase; letter-spacing:.06em; }
@@ -567,6 +579,7 @@
       <h2 id="s-name"></h2>
       <div class="scat" id="s-cat"></div>
       <div class="sstatus" id="s-status"></div>
+      <div class="hours" id="s-hours" style="display:none"></div>
       <div class="srate"><span class="stars" id="s-stars"></span><span class="n" id="s-rev"></span></div>
       <div class="sgoogle" id="s-google" style="display:none"></div>
       <div class="etas" id="s-etas"><div class="eta" data-mode="walking"><div class="t" id="s-walk"></div><div class="m">walk</div></div><div class="eta" data-mode="driving"><div class="t" id="s-drive"></div><div class="m">drive</div></div><div class="eta" data-mode="transit"><div class="t" id="s-transit"></div><div class="m">transit</div></div></div>
@@ -1009,18 +1022,35 @@
   const ENRICH={};                         // in-memory only, cleared on reload — NOT stored
   const PRICE_MAP={PRICE_LEVEL_INEXPENSIVE:'$',PRICE_LEVEL_MODERATE:'$$',PRICE_LEVEL_EXPENSIVE:'$$$',PRICE_LEVEL_VERY_EXPENSIVE:'$$$$'};
   const GLOGO='<svg width="13" height="13" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>';
+  const CLOCK_SVG='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+  const CHEV_SVG='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+  function buildHoursCard(e){
+    const wk = e.hours && e.hours.weekday; if(!wk || !wk.length) return null;
+    const todayIdx = (new Date().getDay()+6)%7;   // Google weekday array runs Mon..Sun
+    const rows = wk.map((line,i)=>{ const ci=line.indexOf(': '); const day=ci>0?line.slice(0,ci):line; const t=ci>0?line.slice(ci+2):''; return `<div class="hrow${i===todayIdx?' today':''}"><span class="d">${day}</span><span class="t">${t||'—'}</span></div>`; }).join('');
+    const tl=wk[todayIdx]||''; const tci=tl.indexOf(': '); const todayT=tci>0?tl.slice(tci+2):'';
+    const status = e.hours.openNow==null ? '' : (e.hours.openNow?'<span class="st open">Open now</span>':'<span class="st closed">Closed</span>');
+    const sub = (todayT && todayT.toLowerCase()!=='closed') ? `<span class="nx">· ${todayT}</span>` : '';
+    return `<div class="hours-head"><div class="ic">${CLOCK_SVG}</div><div>${status} ${sub}</div><div class="chev">${CHEV_SVG}</div></div><div class="hours-week">${rows}</div>`;
+  }
   function renderGoogle(p, e){
     if(currentPlaceId!==p.id) return;     // user moved on
+    if(!e || !e.ok){ $('s-google').style.display='none'; return; }
+    // photos — prepend up to 4 real Google photos to the strip
+    const photos = (e.photos && e.photos.length) ? e.photos : (e.photoUri?[e.photoUri]:[]);
+    if(photos.length){ const ph=$('sphotos'); if(ph && !ph.querySelector('.gphoto')) ph.insertAdjacentHTML('afterbegin', photos.map((u,i)=>`<div class="sp gphoto" style="background-image:url('${u}')">${i===0?'<span class="pill">'+GLOGO+'Google</span>':''}</div>`).join('')); }
+    // hours card (collapsed by default) — replaces the raw OSM line
+    const hc=buildHoursCard(e);
+    if(hc){ const h=$('s-hours'); h.innerHTML=hc; h.classList.add('collapsed'); h.style.display='block'; $('s-status').style.display='none'; }
+    // rating line
     const el=$('s-google'); if(!el) return;
-    if(!e || !e.ok || e.rating==null){ el.style.display='none'; return; }
+    if(e.rating==null){ el.style.display='none'; return; }
     const price=PRICE_MAP[e.priceLevel]||'';
-    const open = e.openNow===true?'<span style="color:var(--green)">Open now</span>':(e.openNow===false?'<span style="color:var(--mute)">Closed</span>':'');
-    const bits=[`<span class="gstar">★</span> ${e.rating}`, e.userRatingCount?(e.userRatingCount.toLocaleString()):'', open, price].filter(Boolean);
+    const bits=[`<span class="gstar">★</span> ${e.rating}`, e.userRatingCount?(e.userRatingCount.toLocaleString()):'', price].filter(Boolean);
     el.innerHTML=`<span class="glogo">${GLOGO}</span>`+bits.join(' <span class="gdot">·</span> ')
       +(e.googleMapsUri?` <span class="gdot">·</span> <a href="${e.googleMapsUri}" target="_blank" rel="noopener">View on Google ↗</a>`:'')
-      +`<span class="gattr">Ratings &amp; photo from Google</span>`;
+      +`<span class="gattr">Ratings, hours &amp; photos from Google</span>`;
     el.style.display='flex';
-    if(e.photoUri){ const ph=$('sphotos'); if(ph && !ph.querySelector('.gphoto')) ph.insertAdjacentHTML('afterbegin', `<div class="sp gphoto" style="background-image:url('${e.photoUri}');background-size:cover;background-position:center;"><span class="pill">Google</span></div>`); }
   }
   function enrichPlace(p){
     if(ENRICH[p.id]){ renderGoogle(p, ENRICH[p.id]); return; }
@@ -1032,7 +1062,7 @@
   }
   function openPlace(id){ const p=places[id]; if(!p)return; curLandmark=null; currentPlaceId=id; selId=id; openedAt=Date.now(); posLogged=false; logInteraction(id,'open'); render(); hideHint(); syncSaveBtn(id);
     $('s-name').innerHTML=p.name+(p.live?' <span class="livebadge"><span class="d"></span>LIVE</span>':'');
-    $('s-cat').textContent=p.catLabel; $('s-stars').textContent=p.rated?('★ '+p.stars):'Drop It · be the first to rate'; $('s-rev').textContent=p.rated?(p.rev+' ratings'):''; $('s-google').style.display='none';
+    $('s-cat').textContent=p.catLabel; $('s-stars').innerHTML=p.rated?('★ '+p.stars):'<span style="color:var(--coral);font-size:17px;">☆</span> <span style="color:var(--amber);font-weight:700;font-size:14px;">Drop It</span> <span style="color:var(--dim);font-weight:400;font-size:12.5px;">be the first to rate</span>'; $('s-rev').textContent=p.rated?(p.rev+' ratings'):''; $('s-google').style.display='none'; $('s-hours').style.display='none';
     { const hrs=(p.hours||'').trim(); let tone='soon'; if(/^closed/i.test(hrs)) tone='closed'; else if(/^open/i.test(hrs)) tone='open'; $('s-status').innerHTML = hrs ? `<span class="sdot ${tone}"></span>${hrs}` : ''; }
     $('s-walk').textContent=p.walk; $('s-drive').textContent=p.drive; $('s-transit').textContent=p.transit; $('s-blurb').textContent=p.blurb;
     let strip=p.userPhotos.map(u=>`<div class="sp" style="background-image:url('${u}')"><span class="pill">Your post</span></div>`).join('');
@@ -1052,7 +1082,7 @@
     $('sheet').scrollTop=0; fetchEta(p); enrichPlace(p); openSheet('peek');
   }
   function openFriend(id){ const f=friendsMeta[id]; if(!f)return; curLandmark=null; currentPlaceId=null; selId=null; render(); hideHint();
-    $('s-name').textContent=f.name; $('s-cat').textContent=f.where+' · '+f.ago; $('s-status').innerHTML=''; $('s-stars').textContent=''; $('s-rev').textContent=''; $('s-google').style.display='none';
+    $('s-name').textContent=f.name; $('s-cat').textContent=f.where+' · '+f.ago; $('s-status').innerHTML=''; $('s-stars').textContent=''; $('s-rev').textContent=''; $('s-google').style.display='none'; $('s-hours').style.display='none';
     $('s-walk').textContent='–'; $('s-drive').textContent='–'; $('s-transit').textContent='–';
     $('s-blurb').textContent=f.note+'  (You only ever see a neighborhood glow — never an exact location.)';
     $('sphotos').innerHTML=`<div class="sp" style="background:${f.g};width:100%;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#fff;">${f.name[0]}</div>`;
@@ -1069,7 +1099,7 @@
     $('s-name').textContent=name;
     $('s-cat').textContent=area?`${label} · ${area}`:label;
     $('s-status').innerHTML=''; $('s-stars').textContent=''; $('s-rev').textContent='';
-    $('s-walk').textContent='–'; $('s-drive').textContent='–'; $('s-transit').textContent='–'; $('s-google').style.display='none';
+    $('s-walk').textContent='–'; $('s-drive').textContent='–'; $('s-transit').textContent='–'; $('s-google').style.display='none'; $('s-hours').style.display='none';
     $('s-blurb').innerHTML='<span style="color:var(--mute)">Looking up info…</span>';
     $('sphotos').innerHTML=`<div class="sp" style="background:linear-gradient(135deg,#36404f,#212834);width:100%;"></div>`;
     $('s-parking').innerHTML=''; $('s-fhere-sec').style.display='none'; $('s-vids').innerHTML=''; $('s-vidcount').textContent='';
@@ -1181,6 +1211,7 @@
   $('s-dir').onclick=()=>{ openDirChooser('walking'); };
   $('s-save').onclick=()=>onSaveTap();
   $('s-etas').addEventListener('click',e=>{ const t=e.target.closest('.eta'); if(!t)return; openDirChooser(t.dataset.mode); });
+  $('s-hours').addEventListener('click',e=>{ if(e.target.closest('.hours-head')) $('s-hours').classList.toggle('collapsed'); });
   $('s-ratecta').onclick=()=>toast('Rating screen coming next ★');
   $('s-vids').addEventListener('click',()=>{ if(currentPlaceId){ logInteraction(currentPlaceId,'video'); posLogged=true; } });
   $('avatar').onclick=()=>{ document.querySelector('.nav button[data-v="you"]').click(); };

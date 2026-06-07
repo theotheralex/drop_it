@@ -87,6 +87,8 @@
   .gemcard .gh { display:flex; align-items:center; gap:8px; padding:11px 13px 2px; font-weight:700; font-size:13.5px; color:var(--text); }
   .gemcard .gh svg { width:15px; height:15px; color:#10b981; }
   .gemcard .gh .gsc { margin-left:auto; font-size:13px; font-weight:800; color:#34d399; }
+  .gemcard .gh .ok { margin-left:auto; display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#0e9f6e; background:rgba(16,185,129,.14); padding:3px 9px; border-radius:999px; }
+  .gemcard .gh .ok svg { width:11px; height:11px; color:#0e9f6e; }
   .gemcard .grows { padding:9px 13px 6px; display:flex; flex-direction:column; gap:11px; }
   .gemcard .grow .gtop { display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; gap:10px; }
   .gemcard .grow .gk { font-weight:600; color:var(--text); }
@@ -340,9 +342,10 @@
   .dvtrend { padding:2px 0 4px; }
   .dvtrend-h { display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--dim); text-transform:uppercase; letter-spacing:.06em; padding:0 18px 9px; }
   .dvtrend-h svg { width:14px; height:14px; }
-  .dvtrend-rail { display:flex; gap:11px; overflow-x:auto; scrollbar-width:none; padding:0 18px 4px; scroll-snap-type:x mandatory; }
+  .dvtrend-rail { display:flex; gap:11px; overflow-x:auto; scrollbar-width:none; padding:0 18px 4px; scroll-snap-type:x mandatory; scroll-padding-left:18px; }
+  .dvtrend-rail::after { content:''; flex:0 0 7px; }
   .dvtrend-rail::-webkit-scrollbar { display:none; }
-  .tcard { flex:1 0 130px; min-width:0; max-width:300px; scroll-snap-align:start; }
+  .tcard { flex:0 0 clamp(150px,42%,260px); min-width:0; scroll-snap-align:start; }
   .tcard .timg { aspect-ratio:16/10; border-radius:14px; position:relative; overflow:hidden; border:1px solid var(--line); }
   .tcard .trank { position:absolute; top:7px; left:7px; min-width:21px; height:21px; padding:0 5px; border-radius:999px; background:rgba(8,11,18,.72); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; }
   .tcard .tflame { position:absolute; top:7px; right:7px; width:20px; height:20px; border-radius:50%; background:linear-gradient(135deg,#ff8a3d,#ff3b30); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,.4); }
@@ -384,6 +387,8 @@
   body.m-light .chip.on { background:var(--coral); color:#fff; border-color:var(--coral); box-shadow:0 3px 10px rgba(255,91,72,.30); }
   body.m-light .chip-ev { color:#9c7521; background:#fff; border-color:rgba(212,162,71,.45); }
   body.m-light .chip-ev.on { background:var(--gold); color:#3a2a08; border-color:var(--gold); }
+  body.m-light .chip-gem { color:#0e9f6e; background:#fff; border-color:rgba(16,185,129,.45); }
+  body.m-light .chip-gem.on { background:#10b981; color:#fff; border-color:#10b981; }
   /* events layer */
   .ewhen { color:var(--gold); font-size:14.5px; font-weight:700; margin-top:8px; letter-spacing:.2px; }
   .esrc { display:flex; align-items:center; gap:8px; color:var(--dim); font-size:12px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:11px 12px; width:100%; text-align:left; font-family:inherit; cursor:pointer; }
@@ -392,6 +397,9 @@
   .esrc .arr { margin-left:auto; color:var(--mute); }
   .chip-ev { color:var(--gold); border-color:rgba(212,162,71,.4); background:rgba(212,162,71,.12); }
   .chip-ev.on { background:var(--gold); color:#1a1206; border-color:var(--gold); }
+  .chip-gem { color:#34d399; border-color:rgba(16,185,129,.42); background:rgba(16,185,129,.12); }
+  .chip-gem.on { background:#10b981; color:#04140e; border-color:#10b981; }
+  .chip-gem svg { fill:currentColor; }
   .ev.evt { border-color:rgba(212,162,71,.32); }
   .ev .evpill.gold { background:rgba(212,162,71,.94); color:#1a1206; }
   .ev .evpill.gold svg { width:11px; height:11px; margin-right:1px; }
@@ -493,6 +501,7 @@
           <div class="chips2" id="chips">
             <div class="chip on" data-f="all">All</div>
             <div class="chip chip-ev" data-f="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/></svg>Events</div>
+            <div class="chip chip-gem" data-f="gem"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12l4 6-10 12L2 9z"/></svg>Gems</div>
             <div class="chip" data-f="food"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="3" x2="7" y2="21"/><path d="M5 3v4a2 2 0 0 0 4 0V3"/><path d="M16 3c-1.6 0-2.6 2-2.6 4.5S14.4 11 16 11v10"/></svg>Food</div>
             <div class="chip" data-f="cafe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h11v4a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5V8z"/><path d="M16 9h2a2.5 2.5 0 0 1 0 5h-2"/><path d="M7 2v2.2M11 2v2.2"/></svg>Cafés</div>
             <div class="chip" data-f="drinks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14l-7 8-7-8z"/><line x1="12" y1="12" x2="12" y2="20"/><line x1="8" y1="20" x2="16" y2="20"/></svg>Drinks</div>
@@ -520,7 +529,7 @@
         <div class="grab2"></div>
         <div class="dvhead"><div class="dveye">Wednesday · 7:42 PM</div><div class="dvtitle">Live <em>now</em> nearby.</div></div>
         <div class="dvtrend" id="dvforyou-wrap" style="display:none"><div class="dvtrend-h"><svg viewBox="0 0 24 24" fill="none" stroke="#8a5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.3 6.9H21l-5.4 4 2.1 6.6L12 16.6 6.3 20.5l2.1-6.6-5.4-4h6.7z"/></svg> For you</div><div class="dvtrend-rail" id="dvforyou"></div></div>
-        <div class="dvtrend"><div class="dvtrend-h"><svg viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> Trending now</div><div class="dvtrend-rail" id="dvtrend"></div></div>
+        <div class="dvtrend"><div class="dvtrend-h"><svg viewBox="0 0 24 24" fill="none" stroke="#e0985a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="15.5 8.5 13.5 13.5 8.5 15.5 10.5 10.5"/></svg> Worth a look</div><div class="dvtrend-rail" id="dvtrend"></div></div>
         <div class="dvseg" id="dvseg"><button class="on" data-seg="now">Now</button><button data-seg="tonight">Tonight</button><button data-seg="weekend">Weekend</button></div>
         <div class="dvfeed" id="dvfeed"></div>
       </div>
@@ -613,7 +622,6 @@
       <div class="sstatus" id="s-status"></div>
       <div class="hours" id="s-hours" style="display:none"></div>
       <div class="srate"><span class="stars" id="s-stars"></span><span class="n" id="s-rev"></span></div>
-      <div class="gemcard" id="s-gem" style="display:none"></div>
       <div class="sgoogle" id="s-google" style="display:none"></div>
       <div class="etas" id="s-etas"><div class="eta" data-mode="walking"><div class="t" id="s-walk"></div><div class="m">walk</div></div><div class="eta" data-mode="driving"><div class="t" id="s-drive"></div><div class="m">drive</div></div><div class="eta" data-mode="transit"><div class="t" id="s-transit"></div><div class="m">transit</div></div></div>
       <div class="acts"><button class="ico" id="s-save"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></button><button class="primary" id="s-dir"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 11l19-9-9 19-2-8z"/></svg>Directions</button><button class="ghost" id="s-drop">Drop a pin</button></div>
@@ -623,6 +631,7 @@
       <div class="sec" id="s-vids-sec"><div class="sec-h"><div class="sec-t">Videos from users</div><div class="sec-l" id="s-vidcount"></div></div><div class="vids" id="s-vids"></div></div>
       <div class="sec" id="s-photos-sec"><div class="sec-h"><div class="sec-t">Photos</div><div class="sec-l">See all</div></div><div class="pgrid" id="s-photos"></div></div>
       <div class="sec"><div class="sec-h"><div class="sec-t">Drop It rating</div></div><div class="rbig"><div><div class="rnum" id="s-rnum"></div><div class="rsub">★★★★★</div><div class="rcnt" id="s-rcnt"></div></div><div class="rbars" id="s-rbars"></div></div><div class="ratecta" id="s-ratecta"><div><div class="nm">Rate this spot <span class="empty">☆☆☆☆☆</span></div><div class="ds">Add your stars and a quick note</div></div><div style="color:var(--mute)">›</div></div></div>
+      <div class="gemcard" id="s-gem" style="display:none"></div>
       <div class="sec rev"><div class="sec-h"><div class="sec-t">Recent reviews</div></div><div id="s-reviews"></div></div>
     </div>
   </div>
@@ -828,7 +837,7 @@
     }
     const busyPct=rated?Math.min(1,(live?0.42:0.12)+sd(name,'busy')*0.46+Math.min(0.22,posts/700)):0;
     const buslevel= busyPct>0.66?'Busy right now': busyPct>0.4?'Picking up':'Quiet right now';
-    const chain=isChainName(name);
+    const chain = (typeof r.fsq_is_chain==='boolean') ? r.fsq_is_chain : isChainName(name); // FSQ's authoritative flag when matched, else name heuristic
     const fsqR=numOrNull(r.fsq_rating), fsqP=numOrNull(r.fsq_pop);
     let gemScore=null, gemQ=0, gemO=0, gemI=0, gpick=false;
     if(fsqR!=null && fsqP!=null){
@@ -878,16 +887,16 @@
   const map=$('map'), markers=$('markers');
   const CR=48, DOTS_Z=13.2, LABELS_Z=14.2, CLUSTER_Z=14.9, START_Z=14.4;
   let mlmap=null, mlReady=false;
-  function visible(){ const q=SEARCH.trim().toLowerCase(); return Object.values(places).filter(p=>{ let f; if(FILTER==='all') f=true; else if(FILTER==='live') f=p.live; else if(FILTER==='saved') f=isSaved(p.id); else if(typeof FILTER==='string'&&FILTER.indexOf('list:')===0){ const L=listById(FILTER.slice(5)); f=!!(L&&L.items.includes(p.id)); } else f=(p.cat===FILTER); if(!f) return false; return q? (p.name+' '+p.type+' '+p.cat).toLowerCase().includes(q) : true; }); }
+  function visible(){ const q=SEARCH.trim().toLowerCase(); return Object.values(places).filter(p=>{ let f; if(FILTER==='all') f=true; else if(FILTER==='live') f=p.live; else if(FILTER==='saved') f=isSaved(p.id); else if(typeof FILTER==='string'&&FILTER.indexOf('list:')===0){ const L=listById(FILTER.slice(5)); f=!!(L&&L.items.includes(p.id)); } else if(FILTER==='gem') f=p.pick; else f=(p.cat===FILTER); if(!f) return false; return q? (p.name+' '+p.type+' '+p.cat).toLowerCase().includes(q) : true; }); }
   function pinMK(p,sx,sy,withLabel){
     let ring='';
     if(p.live){ const d=(2.6-p.busy*1.3).toFixed(2); ring=`<div class="ring" style="animation:pingC ${d}s ease-out infinite"></div>`+(p.busy>0.62?`<div class="ring2" style="animation:pingC ${d}s ease-out infinite ${(d*0.5).toFixed(2)}s"></div>`:''); }
     const ic=p.icon==='TACO'?TACO:(ICONHTML[p.icon]||'');
     const lbl=withLabel?`<div class="lbl">${p.live?`<span class="live" style="background:${p.dot}"></span>`:''}${p.name}</div>`:'';
-    const flame=(withLabel&&HOT.has(p.id))?`<div class="flame">${FLAME_SVG}</div>`:'';
-    return `<div class="mk pin${HOT.has(p.id)?'':' calm'}${p.id===selId?' selected':''}" data-id="${p.id}" data-lng="${p.lng}" data-lat="${p.lat}" style="left:${sx}px;top:${sy}px;color:${p.dot}"><div class="body" style="background:${p.fill}">${ic}</div>${flame}${ring}${lbl}</div>`;
+    return `<div class="mk pin${HOT.has(p.id)?'':' calm'}${p.id===selId?' selected':''}" data-id="${p.id}" data-lng="${p.lng}" data-lat="${p.lat}" style="left:${sx}px;top:${sy}px;color:${p.dot}"><div class="body" style="background:${p.fill}">${ic}</div>${ring}${lbl}</div>`;
   }
   const GEM_GLYPH='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12l4 6-10 12L2 9z"/></svg>';
+  const CHECK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>';
   function gemMK(p,sx,sy){
     let ring='';
     if(p.live){ const d=(2.6-p.busy*1.3).toFixed(2); ring=`<div class="ring" style="animation:pingC ${d}s ease-out infinite"></div>`; }
@@ -1045,8 +1054,9 @@
       .then(e=>{ const u=(e&&e.ok&&e.photo)?e.photo:null; PHOTOC[key]=u; apply(u); })
       .catch(()=>{ PHOTOC[key]=null; });
   }
-  function renderTrending(){ const rail=$('dvtrend'); if(!rail) return; const top=TRENDING.slice(0,5);
-    rail.innerHTML=top.map((p,i)=>`<div class="tcard" data-id="${p.id}"><div class="timg gph-target" data-pn="${(p.name||'').replace(/"/g,'&quot;')}" data-pa="${(p.area||'').replace(/"/g,'&quot;')}" data-plat="${p.lat}" data-plng="${p.lng}" style="background:${gx(p.g[0])}"><div class="trank">${i+1}</div>${i<3?`<div class="tflame">${FLAME_SVG}</div>`:''}</div><div class="tnm">${p.name}</div><div class="trow">${p.rated?('<span class="star">★</span>'+p.stars):'<span style="color:var(--mute)">New</span>'}<span>·</span>${p.live?p.buslevel:(p.area||p.type)}</div></div>`).join('');
+  function renderTrending(){ const rail=$('dvtrend'); if(!rail) return;
+    const top=Object.values(places).map(p=>{ const q=(p.fsqRating!=null)?clamp01(p.fsqRating/10):0.45, ind=p.chain?0.5:1, prox=Math.exp(-(parseFloat(p.dist)||3)/2); return {p,s:q*ind*prox}; }).sort((a,b)=>b.s-a.s).slice(0,5).map(x=>x.p);
+    rail.innerHTML=top.map((p,i)=>`<div class="tcard" data-id="${p.id}"><div class="timg gph-target" data-pn="${(p.name||'').replace(/"/g,'&quot;')}" data-pa="${(p.area||'').replace(/"/g,'&quot;')}" data-plat="${p.lat}" data-plng="${p.lng}" style="background:${gx(p.g[0])}"><div class="trank">${i+1}</div></div><div class="tnm">${p.name}</div><div class="trow">${p.pick?'<span style="color:#34d399;font-weight:700;">◆ Local pick</span>':`${p.type}${p.area?' · '+p.area:''}`}</div></div>`).join('');
     hydrateDiscoverPhotos();
   }
   function eventsForSeg(seg){
@@ -1147,16 +1157,16 @@
     { const hrs=(p.hours||'').trim(); let tone='soon'; if(/^closed/i.test(hrs)) tone='closed'; else if(/^open/i.test(hrs)) tone='open'; $('s-status').innerHTML = hrs ? `<span class="sdot ${tone}"></span>${hrs}` : ''; }
     $('s-walk').textContent=p.walk; $('s-drive').textContent=p.drive; $('s-transit').textContent=p.transit; $('s-blurb').textContent=p.blurb;
     if(p.pick){
-      const q=Math.round(p.gemQ*100), o=Math.round(p.gemO*100), iI=Math.round(p.gemI*100), lovedPct=8;
+      const radarDisp=Math.round(100*Math.pow(clamp01(1-clamp01(p.pop/8)),0.6)), lovedPct=8;
       $('s-pick').style.display=''; $('s-pick').innerHTML=GEM_GLYPH+'Local pick';
       $('s-gem').style.display='';
-      $('s-gem').innerHTML=`<div class="gh">${GEM_GLYPH}Why it's a local pick<span class="gsc">Gem ${p.gemScore}</span></div>`
+      $('s-gem').innerHTML=`<div class="gh">${GEM_GLYPH}Why it's a local pick<span class="ok">${CHECK_SVG}Well rated</span></div>`
         +`<div class="grows">`
-        +gemRow('Quality', p.fsqRating!=null?('Foursquare '+(+p.fsqRating).toFixed(1)+' ★'):'rated', q)
-        +gemRow('Under-the-radar','less famous than the marquee spots', o)
-        +gemRow('Independent', p.chain?'chain':'not a chain', iI)
-        +gemRowFuture('Loved by locals','fills from Drop It saves &amp; ratings', lovedPct)
-        +`</div><div class="gatt">Quality from Foursquare for now — your Drop It ratings take over as they grow.</div>`;
+        +gemRow('Quality','meets our quality bar',100)
+        +gemRow('Under-the-radar','open map prominence', radarDisp)
+        +gemRow('Independent', p.chain?'chain':'not a chain', p.chain?30:100)
+        +gemRowFuture('Loved by locals','grows from your saves &amp; ratings', lovedPct)
+        +`</div><div class="gatt">Under-the-radar from open map data — your Drop It ratings power the rest as they grow.</div>`;
     } else { $('s-pick').style.display='none'; $('s-gem').style.display='none'; }
     let strip=p.userPhotos.map(u=>`<div class="sp" style="background-image:url('${u}')"><span class="pill">Your post</span></div>`).join('');
     strip+=p.g.map((g,i)=>`<div class="sp" style="background:${gx(g)}">${i===0&&!p.userPhotos.length&&p.rated?'<span class="pill">'+(p.live?p.buslevel:'photo')+'</span>':''}</div>`).join('');
@@ -1649,7 +1659,7 @@
     const b=mlmap.getBounds();
     const s=b.getSouth().toFixed(4), w=b.getWest().toFixed(4), n=b.getNorth().toFixed(4), e=b.getEast().toFixed(4);
     const key=`${s},${w},${n},${e}`; if(key===vpLast) return; vpLast=key;
-    const url=`${SUPA_URL}/rest/v1/places?select=name,type,lat,lng,area,hours,website,pop,stars,ratings,osm_id,fsq_rating,fsq_pop,fsq_id`
+    const url=`${SUPA_URL}/rest/v1/places?select=name,type,lat,lng,area,hours,website,pop,stars,ratings,osm_id,fsq_rating,fsq_pop,fsq_id,fsq_is_chain`
       +`&lat=gte.${s}&lat=lte.${n}&lng=gte.${w}&lng=lte.${e}&order=pop.desc&limit=300`;
     fetch(url,{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}})
       .then(r=>r.ok?r.json():null)

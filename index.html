@@ -133,9 +133,9 @@
   .sresult .sn { font-size:13.5px; font-weight:600; }
   .sresult .sc { font-size:11px; color:var(--dim); margin-top:1px; }
 
-  .zoomc { position:absolute; right:18px; bottom:160px; display:flex; flex-direction:column; gap:2px; z-index:15; border-radius:14px; overflow:hidden; box-shadow:0 8px 20px rgba(0,0,0,.4); }
+  .zoomc { position:absolute; right:18px; bottom:286px; display:flex; flex-direction:column; gap:2px; z-index:15; border-radius:14px; overflow:hidden; box-shadow:0 8px 20px rgba(0,0,0,.4); }
   .zoomc button { width:44px; height:44px; background:rgba(20,24,34,0.95); border:1px solid var(--line); color:var(--text); font-size:22px; font-weight:500; }
-  .fab { position:absolute; right:18px; bottom:90px; width:58px; height:58px; border-radius:20px; background:linear-gradient(145deg,var(--coral-2),var(--coral) 60%,var(--rust)); display:flex; align-items:center; justify-content:center; box-shadow:0 10px 26px rgba(255,91,72,0.45); z-index:15; border:none; }
+  .fab { position:absolute; right:18px; bottom:214px; width:58px; height:58px; border-radius:20px; background:linear-gradient(145deg,var(--coral-2),var(--coral) 60%,var(--rust)); display:flex; align-items:center; justify-content:center; box-shadow:0 10px 26px rgba(255,91,72,0.45); z-index:15; border:none; }
   .hint { position:absolute; bottom:24px; left:50%; transform:translateX(-50%); background:rgba(10,13,20,.92); border:1px solid var(--line); padding:9px 15px; border-radius:999px; font-size:12px; color:var(--dim); z-index:15; transition:opacity .5s; white-space:nowrap; }
 
   .dvmap { position:relative; height:206px; background:#0e1320; overflow:hidden; flex-shrink:0; }
@@ -185,7 +185,7 @@
   .sw { width:46px; height:27px; border-radius:999px; background:var(--surface-2); position:relative; transition:background .2s; flex-shrink:0; }
   .sw.on { background:var(--coral); } .sw::after { content:""; position:absolute; top:3px; left:3px; width:21px; height:21px; border-radius:50%; background:#fff; transition:left .2s; } .sw.on::after { left:22px; }
 
-  .nav { display:flex; align-items:flex-end; flex-shrink:0; background:rgba(13,16,24,0.94); backdrop-filter:blur(16px); border-top:1px solid var(--line); padding:8px 4px calc(8px + env(safe-area-inset-bottom)); z-index:25; }
+  .nav { display:flex; align-items:flex-end; flex-shrink:0; background:rgba(13,16,24,0.94); backdrop-filter:blur(16px); border-top:1px solid var(--line); padding:8px 4px calc(8px + env(safe-area-inset-bottom)); z-index:41; }
   .nav button { flex:1; background:none; border:none; color:var(--mute); display:flex; flex-direction:column; align-items:center; gap:3px; padding:5px 0; font-size:10px; font-weight:600; font-family:inherit; }
   .nav button.on { color:var(--coral); }
   .nav svg { width:23px; height:23px; }
@@ -195,6 +195,9 @@
   .sheet { position:absolute; left:0; right:0; bottom:0; background:var(--bg-2); border-radius:26px 26px 0 0; transform:translateY(100%); transition:transform .34s cubic-bezier(.2,.8,.2,1); z-index:45; max-height:92%; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:none; -ms-overflow-style:none; border-top:1px solid var(--line); }
   .sheet::-webkit-scrollbar { display:none; }
   .sheet.on { transform:translateY(0); }
+  .dsheet { z-index:40; }                         /* Discover sheet sits under the detail sheets */
+  .dsheet .dvhead { padding-top:2px; }
+  .dsheet .dvfeed { padding-bottom:122px; }       /* clear the nav bar */
   .sheet-handle { padding:15px 0 13px; touch-action:none; cursor:grab; }
   .grab2 { width:38px; height:4px; border-radius:999px; background:var(--mute); margin:0 auto 4px; }
   .sphotos { display:flex; gap:6px; padding:8px 14px; overflow-x:auto; scrollbar-width:none; touch-action:pan-x; scroll-snap-type:x mandatory; overflow-anchor:none; }
@@ -523,23 +526,6 @@
       </div>
     </div>
 
-    <div class="view" id="v-discover">
-      <div class="dvmap">
-        <div id="dvmlmap"></div>
-        <div id="dvdots"></div>
-        <div class="dvpill"><span class="ld"></span> Happening now · the Mission</div>
-      </div>
-      <div class="dvdrawer">
-        <div class="grab2"></div>
-        <div class="dvhead"><div class="dveye">Wednesday · 7:42 PM</div><div class="dvtitle">Live <em>now</em> nearby.</div></div>
-        <div class="dvtrend" id="dvvibes-wrap"><div class="dvtrend-h">Browse by vibe</div><div class="chips2" id="dvvibes"></div></div>
-        <div class="dvtrend" id="dvforyou-wrap" style="display:none"><div class="dvtrend-h"><svg viewBox="0 0 24 24" fill="none" stroke="#8a5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.3 6.9H21l-5.4 4 2.1 6.6L12 16.6 6.3 20.5l2.1-6.6-5.4-4h6.7z"/></svg> For you</div><div class="dvtrend-sub" id="dvforyou-sub"></div><div class="dvtrend-rail" id="dvforyou"></div></div>
-        <div class="dvtrend"><div class="dvtrend-h"><svg viewBox="0 0 24 24" fill="none" stroke="#e0985a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="15.5 8.5 13.5 13.5 8.5 15.5 10.5 10.5"/></svg> Worth a look</div><div class="dvtrend-rail" id="dvtrend"></div></div>
-        <div class="dvseg" id="dvseg"><button class="on" data-seg="now">Now</button><button data-seg="tonight">Tonight</button><button data-seg="weekend">Weekend</button></div>
-        <div class="dvfeed" id="dvfeed"></div>
-      </div>
-    </div>
-
     <div class="view" id="v-friends">
       <div class="vhead"><h2 class="serif">Friends</h2><p>3 nearby · neighborhoods only, never exact</p></div>
       <div style="padding-bottom:110px;">
@@ -607,8 +593,7 @@
   </div>
 
   <div class="nav">
-    <button class="on" data-v="map"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><line x1="9" y1="4" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="20"/></svg>Map</button>
-    <button data-v="discover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5 11 11l-2.5 4.5L13 13l2.5-4.5Z" fill="currentColor" stroke="none"/></svg>Discover</button>
+    <button class="on" data-v="map"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><line x1="9" y1="4" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="20"/></svg>Explore</button>
     <button id="cap" style="color:var(--coral)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="7" width="18" height="13" rx="3"/><circle cx="12" cy="13.5" r="3.6"/><path d="M8 7l1.5-2.5h5L16 7" stroke-linejoin="round"/></svg>Camera</button>
     <button data-v="friends"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.4"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 5.5a3 3 0 0 1 0 6M17 14.6c2.4.5 4 2.4 4 5.4"/></svg>Friends</button>
     <button data-v="you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg>You</button>
@@ -654,6 +639,16 @@
       <div class="sec" id="e-fhere-sec" style="display:none"><div id="e-fhere"></div></div>
       <div class="sec" id="e-src-sec"><button class="esrc" id="e-src"></button></div>
     </div>
+  </div>
+
+  <div class="sheet dsheet" id="dsheet">
+    <div class="sheet-handle" id="dsheetHandle"><div class="grab2"></div></div>
+    <div class="dvhead"><div class="dveye">Wednesday · 7:42 PM</div><div class="dvtitle">Live <em>now</em> nearby.</div></div>
+    <div class="dvseg" id="dvseg"><button class="on" data-seg="now">Now</button><button data-seg="tonight">Tonight</button><button data-seg="weekend">Weekend</button></div>
+    <div class="dvtrend" id="dvvibes-wrap"><div class="dvtrend-h">Browse by vibe</div><div class="chips2" id="dvvibes"></div></div>
+    <div class="dvtrend" id="dvforyou-wrap" style="display:none"><div class="dvtrend-h"><svg viewBox="0 0 24 24" fill="none" stroke="#8a5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.3 6.9H21l-5.4 4 2.1 6.6L12 16.6 6.3 20.5l2.1-6.6-5.4-4h6.7z"/></svg> For you</div><div class="dvtrend-sub" id="dvforyou-sub"></div><div class="dvtrend-rail" id="dvforyou"></div></div>
+    <div class="dvtrend"><div class="dvtrend-h"><svg viewBox="0 0 24 24" fill="none" stroke="#e0985a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="15.5 8.5 13.5 13.5 8.5 15.5 10.5 10.5"/></svg> Worth a look</div><div class="dvtrend-rail" id="dvtrend"></div></div>
+    <div class="dvfeed" id="dvfeed"></div>
   </div>
 
   <div class="modal" id="dropm">
@@ -1348,7 +1343,7 @@
     $('scrim').classList.toggle('on', s==='full');   // peek leaves the map visible & tappable; full dims it
     sheetEl.style.transform = (s==='full') ? 'translateY(0px)' : ('translateY('+peekY()+'px)');
   }
-  function openSheet(state){ $('dropm').classList.remove('on'); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('listm').classList.remove('on'); $('newlistm').classList.remove('on'); eSetState('closed', false);
+  function openSheet(state){ $('dropm').classList.remove('on'); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('listm').classList.remove('on'); $('newlistm').classList.remove('on'); eSetState('closed', false); if(typeof dSet==='function') dSet('peek');
     if(sheetState==='closed'){ sheetEl.style.transition='none'; sheetEl.style.transform='translateY(100%)'; sheetEl.classList.add('on'); void sheetEl.offsetHeight; }
     requestAnimationFrame(()=>setSheetState(state||'peek', true));
   }
@@ -1380,6 +1375,44 @@
       sy=null; drag=false; fromHandle=false; vy=0; }
     sheet.addEventListener('pointerdown',down); sheet.addEventListener('pointermove',move,{passive:false}); sheet.addEventListener('pointerup',up); sheet.addEventListener('pointercancel',up);
   })();
+
+  // ---- Discover sheet: persistent, drag peek <-> half <-> full, over the map ----
+  const dsheetEl=$('dsheet'); let dState='closed';
+  function dH(){ return dsheetEl.offsetHeight || Math.round(window.innerHeight*0.9); }
+  function dPeekY(){ return Math.max(0, Math.round(dH() - 196)); }                                   // peek reveals title + Now/Tonight/Weekend
+  function dHalfY(){ const h=dH(); const vis=Math.min(h, Math.max(360, Math.round(window.innerHeight*0.56))); return Math.max(0, h - vis); }
+  function dSet(s, animate){
+    dsheetEl.style.transition=(animate===false)?'none':'transform .34s cubic-bezier(.2,.8,.2,1)';
+    if(s==='closed'){ dState='closed'; dsheetEl.style.transform='translateY(100%)';
+      if(animate===false){ dsheetEl.classList.remove('on'); } else { setTimeout(()=>{ if(dState==='closed') dsheetEl.classList.remove('on'); },340); }
+      return; }
+    dState=s; dsheetEl.classList.add('on');
+    dsheetEl.style.transform = (s==='full')?'translateY(0px)' : (s==='half')?('translateY('+dHalfY()+'px)') : ('translateY('+dPeekY()+'px)');
+  }
+  (function(){ const sh=dsheetEl; let sy=null,startTf=0,drag=false,fromHandle=false,lastY=0,lastT=0,vy=0;
+    function curY(){ const m=/translateY\(([-\d.]+)px\)/.exec(sh.style.transform||''); if(m) return parseFloat(m[1]); return dState==='full'?0:dPeekY(); }
+    function down(e){ sy=e.clientY; lastY=e.clientY; lastT=Date.now(); vy=0; drag=false; fromHandle=!!e.target.closest('#dsheetHandle'); startTf=curY(); sh.style.transition='none'; }
+    function move(e){ if(sy===null)return; const y=e.clientY, dy=y-sy, now=Date.now(); if(now>lastT){ vy=(y-lastY)/(now-lastT); } lastY=y; lastT=now;
+      if(!drag){
+        if(fromHandle){ if(Math.abs(dy)>2) drag=true; else return; }
+        else if(dy>6 && sh.scrollTop<=0){ drag=true; }
+        else if(dy<-6 && dState!=='full'){ drag=true; }
+        else if(dy<0 || sh.scrollTop>0){ sy=null; sh.style.transition=''; return; }
+        else return;
+      }
+      if(e.cancelable)e.preventDefault();
+      let ny=startTf+dy; if(ny<0) ny=0; sh.style.transform='translateY('+ny+'px)'; }
+    function up(e){ if(sy===null){ sh.style.transition=''; return; } sh.style.transition='';
+      if(!drag){ sy=null; return; }
+      const y=curY(), pk=dPeekY(), hf=dHalfY(); let target;
+      if(vy>0.5){ target=(dState==='full')?'half':'peek'; }
+      else if(vy<-0.5){ target=(dState==='peek'||dState==='closed')?'half':'full'; }
+      else { const dF=Math.abs(y-0), dHf=Math.abs(y-hf), dPk=Math.abs(y-pk); target=(dF<=dHf&&dF<=dPk)?'full':(dHf<=dPk?'half':'peek'); }
+      dSet(target, true);
+      sy=null; drag=false; fromHandle=false; vy=0; }
+    sh.addEventListener('pointerdown',down); sh.addEventListener('pointermove',move,{passive:false}); sh.addEventListener('pointerup',up); sh.addEventListener('pointercancel',up);
+  })();
+  setTimeout(()=>{ if($('v-map').classList.contains('on')) dSet('peek', false); }, 60);
 
   $('scrim').onclick=closeAll; $('fab').onclick=openDrop; $('s-drop').onclick=openDrop;
   $('s-dir').onclick=()=>{ openDirChooser('walking'); };
@@ -1473,7 +1506,11 @@
   $('post-send').onclick=()=>{ const p=places[postPlaceId]; const img=$('post-img').src; if(p&&img){ p.userPhotos.unshift(img); userDrops.push({ lat:HERE.lat+(Math.random()-0.5)*0.0006, lng:HERE.lng+(Math.random()-0.5)*0.0006, photo:img, pid:postPlaceId }); logInteraction(postPlaceId,'post'); } closeAll(); $('post-cap').value=''; if(mlmap) mlmap.easeTo({center:[HERE.lng,HERE.lat], zoom:Math.max(mlmap.getZoom(),15.2)}); render(); toast('Posted to '+(p?p.name:'your spot')+' · pin dropped'); };
 
   $('chips').addEventListener('click',e=>{ const ch=e.target.closest('.chip'); if(!ch)return; document.querySelectorAll('#chips .chip').forEach(c=>c.classList.remove('on')); ch.classList.add('on'); FILTER=ch.dataset.f; render(); });
-  document.querySelectorAll('.nav button[data-v]').forEach(b=>b.onclick=()=>{ document.querySelectorAll('.view').forEach(v=>v.classList.remove('on')); $('v-'+b.dataset.v).classList.add('on'); document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); closeMenus(); if(b.dataset.v==='discover'){ setTimeout(initDvMap,80); setTimeout(loadForYou,90); } if(b.dataset.v==='you'){ renderLists(); updateProfile(); } if(b.dataset.v==='map' && mlmap) setTimeout(()=>{ mlmap.resize(); render(); },80); });
+  document.querySelectorAll('.nav button[data-v]').forEach(b=>b.onclick=()=>{ const wasOn=$('v-'+b.dataset.v).classList.contains('on'); document.querySelectorAll('.view').forEach(v=>v.classList.remove('on')); $('v-'+b.dataset.v).classList.add('on'); document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); closeMenus();
+    if(b.dataset.v==='map'){ if(typeof loadForYou==='function') setTimeout(loadForYou,90); if(mlmap) setTimeout(()=>{ mlmap.resize(); render(); },80);
+      if(typeof dSet==='function'){ if(wasOn) dSet((dState==='peek'||dState==='closed')?'half':'peek'); else dSet('peek'); } }
+    else if(typeof dSet==='function'){ dSet('closed'); }
+    if(b.dataset.v==='you'){ renderLists(); updateProfile(); } });
   document.querySelectorAll('.frow[data-friend]').forEach(el=>el.onclick=()=>openFriend(el.dataset.friend));
   document.querySelectorAll('#privacyopts .opt').forEach(o=>o.onclick=()=>{ document.querySelectorAll('#privacyopts .opt').forEach(x=>x.classList.remove('on')); o.classList.add('on'); updateProfile(); });
   $('ghost').onclick=function(){ this.classList.toggle('on'); };
@@ -1834,7 +1871,7 @@
   let eState='closed';
   function eH(){ return esheetEl.offsetHeight || Math.round(window.innerHeight*0.9); }
   function ePeekY(){ const h=eH(); const vis=Math.min(h, Math.max(340, window.innerHeight*0.52)); return Math.max(0, Math.round(h - vis)); }
-  function eSetState(s, animate){
+  function eSetState(s, animate){ if(s && s!=='closed' && typeof dSet==='function') dSet('peek');
     esheetEl.style.transition = (animate===false)?'none':'transform .34s cubic-bezier(.2,.8,.2,1)';
     if(s==='closed'){
       eState='closed'; esheetEl.style.transform='translateY(100%)'; $('scrim').classList.remove('on');

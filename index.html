@@ -136,6 +136,15 @@
   .zoomc { position:absolute; right:18px; bottom:286px; display:flex; flex-direction:column; gap:2px; z-index:15; border-radius:14px; overflow:hidden; box-shadow:0 8px 20px rgba(0,0,0,.4); }
   .zoomc button { width:44px; height:44px; background:rgba(20,24,34,0.95); border:1px solid var(--line); color:var(--text); font-size:22px; font-weight:500; }
   .fab { position:absolute; right:18px; bottom:214px; width:58px; height:58px; border-radius:20px; background:linear-gradient(145deg,var(--coral-2),var(--coral) 60%,var(--rust)); display:flex; align-items:center; justify-content:center; box-shadow:0 10px 26px rgba(255,91,72,0.45); z-index:15; border:none; }
+  .fab svg { transition:transform .2s ease; }
+  .fab.open svg { transform:rotate(45deg); }
+  .fabmenu { position:absolute; right:18px; bottom:284px; display:flex; flex-direction:column; align-items:flex-end; gap:10px; z-index:16; opacity:0; transform:translateY(10px) scale(.97); pointer-events:none; transition:opacity .18s ease, transform .18s ease; }
+  .fabmenu.on { opacity:1; transform:none; pointer-events:auto; }
+  .fabopt { display:flex; align-items:center; gap:9px; background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:999px; padding:11px 15px; font-weight:650; font-size:14px; font-family:inherit; box-shadow:0 8px 22px rgba(0,0,0,.30); cursor:pointer; }
+  .fabopt svg { width:18px; height:18px; flex-shrink:0; color:var(--coral); }
+  .searcharea { position:absolute; top:118px; left:50%; transform:translateX(-50%) translateY(-6px); z-index:14; display:flex; align-items:center; gap:7px; background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:999px; padding:9px 16px; font-weight:700; font-size:13.5px; font-family:inherit; box-shadow:0 6px 20px rgba(0,0,0,.4); opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; white-space:nowrap; }
+  .searcharea.on { opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0); }
+  .searcharea svg { width:15px; height:15px; color:var(--coral); }
   .hint { position:absolute; bottom:24px; left:50%; transform:translateX(-50%); background:rgba(10,13,20,.92); border:1px solid var(--line); padding:9px 15px; border-radius:999px; font-size:12px; color:var(--dim); z-index:15; transition:opacity .5s; white-space:nowrap; }
 
   .dvmap { position:relative; height:206px; background:#0e1320; overflow:hidden; flex-shrink:0; }
@@ -195,7 +204,10 @@
   .sheet { position:absolute; left:0; right:0; bottom:0; background:var(--bg-2); border-radius:26px 26px 0 0; transform:translateY(100%); transition:transform .34s cubic-bezier(.2,.8,.2,1); z-index:45; max-height:92%; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:none; -ms-overflow-style:none; border-top:1px solid var(--line); }
   .sheet::-webkit-scrollbar { display:none; }
   .sheet.on { transform:translateY(0); }
+  .sheetback { position:absolute; top:13px; left:13px; z-index:6; width:34px; height:34px; border-radius:50%; background:var(--bg-2); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 9px rgba(0,0,0,.32); cursor:pointer; }
+  .sheetback svg { width:19px; height:19px; color:var(--text); }
   .dsheet { z-index:40; }                         /* Discover sheet sits under the detail sheets */
+  .dsheet .sheet-handle { position:sticky; top:0; z-index:3; background:var(--bg-2); border-radius:26px 26px 0 0; }   /* always grabbable, even after scrolling */
   .dsheet .dvhead { padding-top:2px; }
   .dsheet .dvfeed { padding-bottom:122px; }       /* clear the nav bar */
   .sheet-handle { padding:15px 0 13px; touch-action:none; cursor:grab; }
@@ -520,7 +532,12 @@
           <div class="searchpill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a968a" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21" stroke-linecap="round"/></svg><input id="searchInput" type="text" placeholder="Search places, neighborhoods, cities" autocomplete="off" autocorrect="off" /><span class="sclear" id="searchclear" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></span></div>
           <div class="searchresults" id="searchresults"></div>
         </div>
+        <button class="searcharea" id="searcharea"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v5h-5"/></svg>Search this area</button>
         <div class="zoomc"><button id="zloc" aria-label="My location"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3.4M12 18.6V22M2 12h3.4M18.6 12H22" stroke-linecap="round"/></svg></button><button id="zin">+</button><button id="zout">−</button></div>
+        <div class="fabmenu" id="fabmenu">
+          <button class="fabopt" id="fab-photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="3"/><circle cx="12" cy="13.5" r="3.4"/><path d="M8 7l1.5-2.5h5L16 7"/></svg>Share a moment</button>
+          <button class="fabopt" id="fab-pin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 0 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Drop a pin</button>
+        </div>
         <button class="fab" id="fab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="6" x2="12" y2="18"/><line x1="6" y1="12" x2="18" y2="12"/></svg></button>
         <div class="hint" id="hint">Real Mission map · drag, pinch to zoom, tap a pin</div>
       </div>
@@ -594,7 +611,6 @@
 
   <div class="nav">
     <button class="on" data-v="map"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><line x1="9" y1="4" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="20"/></svg>Explore</button>
-    <button id="cap" style="color:var(--coral)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="7" width="18" height="13" rx="3"/><circle cx="12" cy="13.5" r="3.6"/><path d="M8 7l1.5-2.5h5L16 7" stroke-linejoin="round"/></svg>Camera</button>
     <button data-v="friends"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.4"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 5.5a3 3 0 0 1 0 6M17 14.6c2.4.5 4 2.4 4 5.4"/></svg>Friends</button>
     <button data-v="you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg>You</button>
   </div>
@@ -603,6 +619,7 @@
 
   <div class="scrim" id="scrim"></div>
   <div class="sheet" id="sheet">
+    <button class="sheetback" id="s-back" aria-label="Back to Discover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <div class="sheet-handle" id="sheetHandle"><div class="grab2"></div></div>
     <div class="sphotos" id="sphotos"></div>
     <div class="sbody">
@@ -627,6 +644,7 @@
   </div>
 
   <div class="sheet" id="esheet">
+    <button class="sheetback" id="e-back" aria-label="Back to Discover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <div class="sheet-handle" id="esheetHandle"><div class="grab2"></div></div>
     <div class="sphotos" id="e-photos"></div>
     <div class="sbody">
@@ -882,7 +900,7 @@
 
   const STV=[ {x:wx(-122.4268),n:'Dolores St'},{x:wx(-122.4243),n:'Guerrero St'},{x:wx(-122.4214),n:'Valencia St',m:1},{x:wx(-122.4185),n:'Mission St',m:1},{x:wx(-122.4160),n:'S Van Ness'},{x:wx(-122.4120),n:'Folsom St'} ];
   const STH=[ {y:wy(37.7649),n:'16th St'},{y:wy(37.7617),n:'18th St'},{y:wy(37.7592),n:'20th St'},{y:wy(37.7555),n:'22nd St'},{y:wy(37.7522),n:'24th St'},{y:wy(37.7485),n:'Cesar Chavez'} ];
-  let FILTER='all', SEARCH='', userDrops=[], curSeg='now', currentPlaceId=null, selId=null, openedAt=0, posLogged=false;
+  let FILTER='all', SEARCH='', userDrops=[], curSeg='now', currentPlaceId=null, selId=null, openedAt=0, posLogged=false, detailOpen=false, dPrev='peek', lastFetchC=null, lastFetchZ=0, progMove=false;
   const EVENTS={}; let curEventId=null, curEvent=null;
   const EV_TIX_OUTLINE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/></svg>';
   const map=$('map'), markers=$('markers');
@@ -965,6 +983,7 @@
   function scheduleRender(){ if(rafPend)return; rafPend=true; requestAnimationFrame(()=>{ rafPend=false; render(); }); }
   function reposition(){ if(!mlmap||!mlReady)return; const nd=markers.children; for(let i=0;i<nd.length;i++){ const el=nd[i], lng=parseFloat(el.dataset.lng), lat=parseFloat(el.dataset.lat); if(isNaN(lng))continue; const s=mlmap.project([lng,lat]); el.style.left=s.x+'px'; el.style.top=s.y+'px'; } }
   function mapClick(e){
+    { const fm=$('fabmenu'); if(fm&&fm.classList.contains('on')){ fm.classList.remove('on'); $('fab').classList.remove('open'); } }
     const px=e.point.x, py=e.point.y; let best=null, bestD=1e9;
     const nd=markers.children;
     for(let i=0;i<nd.length;i++){ const el=nd[i]; if(el.classList.contains('fglow')||el.classList.contains('here')) continue; const x=parseFloat(el.style.left)||0; let y=parseFloat(el.style.top)||0; if(el.classList.contains('pin')) y-=14; const d=Math.hypot(x-px,y-py); if(d<bestD){ bestD=d; best=el; } }
@@ -976,7 +995,7 @@
     if(best.dataset.ev) openEvent(best.dataset.ev);
     else if(best.dataset.id) openPlace(best.dataset.id);
     else if(best.dataset.lm) openLandmark(best);
-    else if(best.classList.contains('clu')){ mlmap.easeTo({center:[parseFloat(best.dataset.lng),parseFloat(best.dataset.lat)], zoom:Math.min(18,mlmap.getZoom()+1.4)}); }
+    else if(best.classList.contains('clu')){ progMove=true; mlmap.easeTo({center:[parseFloat(best.dataset.lng),parseFloat(best.dataset.lat)], zoom:Math.min(18,mlmap.getZoom()+1.4)}); }
     else if(best.dataset.friend) openFriend(best.dataset.friend);
   }
   const STYLE_DARK='https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
@@ -1006,9 +1025,9 @@
     mlmap=new maplibregl.Map({ container:'mlmap', style:(MAPMODE==='light'?STYLE_LIGHT:STYLE_DARK), center:[HERE.lng,HERE.lat], zoom:START_Z, attributionControl:false, dragRotate:false, pitchWithRotate:false });
     mlmap.addControl(new maplibregl.AttributionControl({compact:true, customAttribution:'Place data © OpenStreetMap contributors'}),'bottom-left');
     if(mlmap.touchZoomRotate && mlmap.touchZoomRotate.disableRotation) mlmap.touchZoomRotate.disableRotation();
-    mlmap.on('load',()=>{ mlReady=true; if(MAPMODE==='dark') tintParks(); render(); fetchViewport(); fetchLandmarks(); fetchEvents(); });
+    mlmap.on('load',()=>{ mlReady=true; if(MAPMODE==='dark') tintParks(); render(); doViewportFetch(); });
     mlmap.on('click', mapClick);
-    mlmap.on('move',reposition); mlmap.on('zoom',scheduleRender); mlmap.on('moveend',()=>{ render(); scheduleViewport(); }); mlmap.on('resize',render);
+    mlmap.on('move',reposition); mlmap.on('zoom',scheduleRender); mlmap.on('moveend',()=>{ render(); if(progMove){ progMove=false; doViewportFetch(); } else { maybeShowSearchArea(); } }); mlmap.on('resize',render);
   }
   $('zin').onclick=()=>{ if(mlmap) mlmap.zoomIn(); };
   $('zloc').onclick=()=>locateUser({announce:true});
@@ -1330,25 +1349,26 @@
   let sheetState='closed';
   function sheetH(){ return sheetEl.offsetHeight || Math.round(window.innerHeight*0.9); }
   function peekY(){ const h=sheetH(); const vis=Math.min(h, Math.max(340, window.innerHeight*0.52)); return Math.max(0, Math.round(h - vis)); }
-  function setSheetState(s, animate){
+  function setSheetState(s, animate){ const wasOpenPlace=sheetState!=='closed';
     sheetEl.style.transition = (animate===false)?'none':'transform .34s cubic-bezier(.2,.8,.2,1)';
     if(s==='closed'){
       if(selId && !posLogged && openedAt && (Date.now()-openedAt)<2500){ logInteraction(selId,'skip'); }
       sheetState='closed'; sheetEl.style.transform='translateY(100%)'; $('scrim').classList.remove('on');
       if(animate===false){ sheetEl.classList.remove('on'); } else { setTimeout(()=>{ if(sheetState==='closed') sheetEl.classList.remove('on'); },340); }
       if(selId){ selId=null; render(); }
+      if(wasOpenPlace && detailOpen && typeof dSet==='function'){ detailOpen=false; if($('v-map').classList.contains('on')) dSet(dPrev||'peek'); }
       return;
     }
     sheetState=s; sheetEl.classList.add('on');
     $('scrim').classList.toggle('on', s==='full');   // peek leaves the map visible & tappable; full dims it
     sheetEl.style.transform = (s==='full') ? 'translateY(0px)' : ('translateY('+peekY()+'px)');
   }
-  function openSheet(state){ $('dropm').classList.remove('on'); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('listm').classList.remove('on'); $('newlistm').classList.remove('on'); eSetState('closed', false); if(typeof dSet==='function') dSet('peek');
+  function openSheet(state){ $('dropm').classList.remove('on'); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('listm').classList.remove('on'); $('newlistm').classList.remove('on'); eSetState('closed', false); if(typeof dSet==='function'){ if(dState!=='closed') dPrev=dState; detailOpen=true; dSet('closed'); }
     if(sheetState==='closed'){ sheetEl.style.transition='none'; sheetEl.style.transform='translateY(100%)'; sheetEl.classList.add('on'); void sheetEl.offsetHeight; }
     requestAnimationFrame(()=>setSheetState(state||'peek', true));
   }
   function openDrop(){ if(sheetState!=='closed') setSheetState('closed', true); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('scrim').classList.add('on'); $('dropm').classList.add('on'); }
-  function closeMenus(){ if(sheetState!=='closed') setSheetState('closed', true); $('dropm').classList.remove('on'); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('listm').classList.remove('on'); $('newlistm').classList.remove('on'); eSetState('closed', true); }
+  function closeMenus(){ if(sheetState!=='closed') setSheetState('closed', true); $('dropm').classList.remove('on'); $('postm').classList.remove('on'); $('dirm').classList.remove('on'); $('listm').classList.remove('on'); $('newlistm').classList.remove('on'); eSetState('closed', true); const fm=$('fabmenu'); if(fm){ fm.classList.remove('on'); $('fab').classList.remove('open'); } }
   function closeAll(){ closeMenus(); $('scrim').classList.remove('on'); if(selId){ selId=null; render(); } }
 
   (function(){ const sheet=sheetEl; let sy=null,startTf=0,drag=false,fromHandle=false,lastY=0,lastT=0,vy=0;
@@ -1414,7 +1434,12 @@
   })();
   setTimeout(()=>{ if($('v-map').classList.contains('on')) dSet('peek', false); }, 60);
 
-  $('scrim').onclick=closeAll; $('fab').onclick=openDrop; $('s-drop').onclick=openDrop;
+  $('scrim').onclick=closeAll; $('fab').onclick=()=>{ const o=$('fabmenu').classList.toggle('on'); $('fab').classList.toggle('open', o); }; $('s-drop').onclick=openDrop;
+  $('fab-pin').onclick=()=>{ $('fabmenu').classList.remove('on'); $('fab').classList.remove('open'); openDrop(); };
+  $('fab-photo').onclick=()=>{ $('fabmenu').classList.remove('on'); $('fab').classList.remove('open'); $('camin').click(); };
+  $('s-back').onclick=()=>setSheetState('closed', true);
+  $('e-back').onclick=()=>eSetState('closed', true);
+  $('searcharea').onclick=()=>doViewportFetch();
   $('s-dir').onclick=()=>{ openDirChooser('walking'); };
   $('s-save').onclick=()=>onSaveTap();
   $('s-etas').addEventListener('click',e=>{ const t=e.target.closest('.eta'); if(!t)return; openDirChooser(t.dataset.mode); });
@@ -1488,8 +1513,8 @@
     function reset(){ si.value=''; SEARCH=''; geoResults=[]; venResults=[]; geoPending=false; venPending=false; clearTimeout(geoTimer); clearTimeout(venTimer); sc.style.display='none'; sr.style.display='none'; sr.innerHTML=''; render(); }
     si.addEventListener('input',run);
     sr.addEventListener('click',e=>{ const r=e.target.closest('.sresult'); if(!r)return;
-      if(r.dataset.geo!==undefined){ const g=geoResults[+r.dataset.geo]; reset(); if(g&&mlmap){ if(g.extent&&g.extent.length===4){ const w=g.extent[0],n=g.extent[1],ee=g.extent[2],s=g.extent[3]; mlmap.fitBounds([[w,s],[ee,n]],{padding:60,maxZoom:15.5,duration:700}); } else { mlmap.easeTo({center:[g.lng,g.lat],zoom:zoomForKind(g.props.osm_value),duration:700}); } } return; }
-      if(r.dataset.id){ const p=places[r.dataset.id]; reset(); if(mlmap) mlmap.easeTo({center:[p.lng,p.lat],zoom:16}); openPlace(p.id); }
+      if(r.dataset.geo!==undefined){ const g=geoResults[+r.dataset.geo]; reset(); progMove=true; if(g&&mlmap){ if(g.extent&&g.extent.length===4){ const w=g.extent[0],n=g.extent[1],ee=g.extent[2],s=g.extent[3]; mlmap.fitBounds([[w,s],[ee,n]],{padding:60,maxZoom:15.5,duration:700}); } else { mlmap.easeTo({center:[g.lng,g.lat],zoom:zoomForKind(g.props.osm_value),duration:700}); } } return; }
+      if(r.dataset.id){ const p=places[r.dataset.id]; reset(); progMove=true; if(mlmap) mlmap.easeTo({center:[p.lng,p.lat],zoom:16}); openPlace(p.id); }
     });
     sc.onclick=()=>{ reset(); si.blur(); };
   })();
@@ -1497,7 +1522,6 @@
   $('senddrop').onclick=()=>{ const who=[...document.querySelectorAll('#dropm .fp.on')].map(x=>x.textContent.trim()); closeAll(); toast(who.length?'Pin dropped! Invited '+who.join(', '):'Pin dropped!'); document.querySelectorAll('#dropm .fp').forEach(x=>x.classList.remove('on')); };
 
   let postPlaceId=null;
-  $('cap').onclick=()=>$('camin').click();
   $('camin').onchange=e=>{ const fl=e.target.files&&e.target.files[0]; if(!fl)return; const rd=new FileReader(); rd.onload=()=>{ $('post-img').src=rd.result; openPost(); }; rd.readAsDataURL(fl); e.target.value=''; };
   function openPost(){ closeMenus(); const near=Object.entries(places).sort((a,b)=>(b[1].live-a[1].live)).slice(0,5); postPlaceId=near[0][0];
     $('post-places').innerHTML=near.map(([id,p],i)=>`<div class="fp ${i===0?'on':''}" data-pp="${id}"><span class="av" style="background:${p.fill}">${p.live?'●':'•'}</span>${p.name}</div>`).join('');
@@ -1508,7 +1532,7 @@
   $('chips').addEventListener('click',e=>{ const ch=e.target.closest('.chip'); if(!ch)return; document.querySelectorAll('#chips .chip').forEach(c=>c.classList.remove('on')); ch.classList.add('on'); FILTER=ch.dataset.f; render(); });
   document.querySelectorAll('.nav button[data-v]').forEach(b=>b.onclick=()=>{ const wasOn=$('v-'+b.dataset.v).classList.contains('on'); document.querySelectorAll('.view').forEach(v=>v.classList.remove('on')); $('v-'+b.dataset.v).classList.add('on'); document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); closeMenus();
     if(b.dataset.v==='map'){ if(typeof loadForYou==='function') setTimeout(loadForYou,90); if(mlmap) setTimeout(()=>{ mlmap.resize(); render(); },80);
-      if(typeof dSet==='function'){ if(wasOn) dSet((dState==='peek'||dState==='closed')?'half':'peek'); else dSet('peek'); } }
+      if(typeof dSet==='function') dSet('peek'); }
     else if(typeof dSet==='function'){ dSet('closed'); }
     if(b.dataset.v==='you'){ renderLists(); updateProfile(); } });
   document.querySelectorAll('.frow[data-friend]').forEach(el=>el.onclick=()=>openFriend(el.dataset.friend));
@@ -1767,6 +1791,10 @@
       .catch(()=>{});
   }
   function scheduleViewport(){ clearTimeout(vpTimer); vpTimer=setTimeout(()=>{ fetchViewport(); fetchLandmarks(); fetchEvents(); },450); }
+  // ---- Search this area: fetch on demand, not on every pan ----
+  function doViewportFetch(){ if(!mlmap||!mlReady) return; lastFetchC=mlmap.getCenter(); lastFetchZ=mlmap.getZoom(); hideSearchArea(); fetchViewport(); fetchLandmarks(); fetchEvents(); }
+  function hideSearchArea(){ const el=$('searcharea'); if(el) el.classList.remove('on'); }
+  function maybeShowSearchArea(){ const el=$('searcharea'); if(!el||!mlmap||!mlReady||!lastFetchC) return; const cont=mlmap.getContainer(); const W=cont.clientWidth||window.innerWidth, H=cont.clientHeight||window.innerHeight; const p0=mlmap.project(lastFetchC); const moved=Math.hypot(p0.x-W/2, p0.y-H/2); if(moved>0.28*Math.min(W,H) || mlmap.getZoom()<lastFetchZ-0.7) el.classList.add('on'); }
 
   // ================= Events (live layer; reads the `events` table) =================
   const EV_TICKET='<svg viewBox="0 0 24 24" fill="#fff"><path d="M4 7.5C4 6.7 4.7 6 5.5 6h13c.8 0 1.5.7 1.5 1.5v2a2 2 0 0 0 0 4v2c0 .8-.7 1.5-1.5 1.5h-13C4.7 18 4 17.3 4 16.5v-2a2 2 0 0 0 0-4v-3z"/></svg>';
@@ -1871,11 +1899,12 @@
   let eState='closed';
   function eH(){ return esheetEl.offsetHeight || Math.round(window.innerHeight*0.9); }
   function ePeekY(){ const h=eH(); const vis=Math.min(h, Math.max(340, window.innerHeight*0.52)); return Math.max(0, Math.round(h - vis)); }
-  function eSetState(s, animate){ if(s && s!=='closed' && typeof dSet==='function') dSet('peek');
+  function eSetState(s, animate){ const wasOpenEvent=eState!=='closed'; if(s && s!=='closed' && typeof dSet==='function'){ if(dState!=='closed') dPrev=dState; detailOpen=true; dSet('closed'); }
     esheetEl.style.transition = (animate===false)?'none':'transform .34s cubic-bezier(.2,.8,.2,1)';
     if(s==='closed'){
       eState='closed'; esheetEl.style.transform='translateY(100%)'; $('scrim').classList.remove('on');
       if(animate===false){ esheetEl.classList.remove('on'); } else { setTimeout(()=>{ if(eState==='closed') esheetEl.classList.remove('on'); },340); }
+      if(wasOpenEvent && detailOpen && typeof dSet==='function'){ detailOpen=false; if($('v-map').classList.contains('on')) dSet(dPrev||'peek'); }
       return;
     }
     eState=s; esheetEl.classList.add('on');
@@ -1915,7 +1944,7 @@
     if(!navigator.geolocation){ if(opts.announce) toast('Location not supported on this device'); return; }
     navigator.geolocation.getCurrentPosition(
       pos=>{ HERE.lat=pos.coords.latitude; HERE.lng=pos.coords.longitude; vpLast='';
-        if(mlmap){ mlmap.easeTo({center:[HERE.lng,HERE.lat], zoom:Math.max(mlmap.getZoom(),14.4)}); }
+        if(mlmap){ progMove=true; mlmap.easeTo({center:[HERE.lng,HERE.lat], zoom:Math.max(mlmap.getZoom(),14.4)}); }
         render(); if(opts.announce) toast('Centered on your location'); },
       err=>{ if(opts.announce) toast(err.code===1?'Location permission denied':"Couldn't get your location"); },
       { enableHighAccuracy:true, timeout:10000, maximumAge:60000 }
